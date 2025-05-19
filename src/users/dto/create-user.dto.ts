@@ -1,0 +1,61 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, MinLength, IsString, IsBoolean, IsOptional, IsEnum } from 'class-validator';
+
+export class CreateUserDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  firstName: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
+
+  @ApiProperty()
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(8)
+  password: string;
+
+  @ApiProperty({ type: Boolean, default: true })
+  @IsBoolean()
+  @IsOptional() 
+  admin?: boolean;
+
+  @ApiProperty({ enum: ['admin', 'user'], default: 'admin' })
+  @IsEnum(['admin', 'user'])
+  @IsOptional()
+  role?: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  createdAt: Date;
+}
+
+export class LoginUserDto {
+  @ApiProperty()
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+
+  @ApiProperty({ enum: ['admin', 'user'], default: 'admin' })
+  @IsEnum(['admin', 'user'])
+  @IsOptional() 
+  role: string;
+   
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+ 
+}
