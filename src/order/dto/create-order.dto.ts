@@ -11,6 +11,10 @@ export class CreateOrderDto {
 productId : string ;
 
 @ApiProperty()
+@IsNotEmpty()
+userId : string ;
+
+@ApiProperty()
 @IsEmail()
 @IsNotEmpty()
 quantity : number ;
@@ -18,8 +22,10 @@ quantity : number ;
 @ApiProperty()
 @IsNotEmpty()
 is_available?: boolean;
-
-
+ 
+// @IsNotEmpty()
+// @IsString()
+// deliveryAddress: string;
 
 
 // @ApiProperty()

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Res, HttpStatus} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Res, HttpStatus, Query} from '@nestjs/common';
 // import { AuthGuard } from '@nestjs/passport';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -10,8 +10,11 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags,} from '@nestjs/swagger';
 import { Public } from 'src/auth/public.decorateur';
 import { Response } from 'express';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Role, Roles } from 'src/auth/role.decorateur';
 
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('products')
 @ApiBearerAuth()
 @Controller('product')
@@ -80,9 +83,8 @@ export class ProductController {
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 201, description: 'Produit créé avec succès' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
-   @Public()
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.admin)
   @ApiBearerAuth()
   create(@Body() createProductDto: CreateProductDto) {
     return this.productService.create(createProductDto);
@@ -95,9 +97,10 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('products')
-  findAll() {
-    return this.productService.findAll();
-  }
+  @Roles(Role.admin)
+  findAll(@Query('search') search?: string) {
+  return this.productService.findAll({ search });
+}
 
   @ApiOperation({ summary: 'Récupérer un produit par son ID' })
   @ApiParam({ name: 'id', description: 'ID du produit' })
@@ -107,6 +110,7 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get(':id')
+  @Roles(Role.admin)
   findOne(@Param('id') id: string) {
     return this.productService.findOne(id);
   }
@@ -120,6 +124,7 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth() 
   @Delete(':id')
+  @Roles(Role.admin)
   remove(@Param('id') id: string) {
     return this.productService.remove(id);
   }

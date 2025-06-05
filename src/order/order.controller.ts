@@ -7,7 +7,9 @@ import { UpdateOrderStatusDto } from './dto/update-order.dto';
 import { Request } from 'express';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { RolesGuard } from 'src/auth/roles.guard';
+import { Order } from '@prisma/client';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('order')
 @ApiBearerAuth()
 @Controller('order')
@@ -15,84 +17,55 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @ApiOperation({ summary: 'Créer un order' })
-  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() dto: CreateOrderDto) {
     return this.orderService.create(dto);
   }
 
-  @ApiOperation({ summary: 'Obtenir tous les order' })
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtenir tous les orders' })
   @Get()
+  @Roles(Role.admin)
   findAll() {
     return this.orderService.getAllOrders();
   }
 
   @ApiOperation({ summary: 'Obtenir un order par ID' })
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
+  @Roles(Role.admin)
   async findOne(@Param('id') id: string) {
-    const order = await this.orderService.findOne(id);
-    if (!order) {
-      throw new NotFoundException(`La commande avec l'ID ${id} n'existe pas`);
-    }
-    return order;
+    return this.orderService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Supprimer un order par ID' })
-  @UseGuards(JwtAuthGuard)
   @Delete(':id')
+  @Roles(Role.admin)
   async remove(@Param('id') id: string) {
-    const order = await this.orderService.findOne(id);
-    if (!order) {
-      throw new NotFoundException(`La commande avec l'ID ${id} n'existe pas`);
-    }
     return this.orderService.remove(id);
   }
-  
-  
 
-    // méthode PATCH pour rejeter une commande avec validation
-@ApiOperation({ summary: 'Mettre à jour le statut d\'une commande' })    
-@Patch('status/:id')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.admin)
-async updateOrderStatus(
-  @Param('id') id: string,
-  @Body() dto: UpdateOrderStatusDto,
-): Promise<any> {
-  const order = await this.orderService.findOne(id);
-
-  if (!order) {
-    throw new NotFoundException(`La commande avec l'ID ${id} n'existe pas`);
-  }
-
-  if (order.status !== OrderStatus.PENDING) {
-    throw new BadRequestException('Seules les commandes en attente peuvent être modifiées');
-  }
-
-  // Vérification du statut demandé
-  if (!dto.status || (dto.status !== OrderStatus.APPROVED && dto.status !== OrderStatus.REJECTED)) {
-    throw new BadRequestException('Le statut doit être APPROVED ou REJECTED');
-  }
-
-  // Vérification de la raison
-  if (!dto.reason || dto.reason.trim() === '') {
-    throw new BadRequestException(`Une raison est requise pour ${dto.status !== OrderStatus.APPROVED ? 'approuver' : 'rejeter'} la commande`);
-  }
-
-  // Vérification supplémentaire pour les commandes vides
-  if (!order.quantity || order.quantity === 0) {
-    if (dto.status === OrderStatus.APPROVED) {
-      throw new BadRequestException('Une commande vide ne peut pas être approuvée');
+  @ApiOperation({ summary: 'Mettre à jour le statut d\'une commande' })
+  @Patch(':id/status')
+  @Roles(Role.admin)
+  @ApiParam({ name: 'id', description: 'ID de la commande' })
+  @ApiBody({ type: UpdateOrderStatusDto })
+  async updateOrderStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrderStatusDto,
+   ): Promise<Order> {
+    if (!dto.status) {
+      throw new BadRequestException('Le statut est requis');
     }
+
+    // ✅ Laissez le service gérer toute la logique métier
+    return this.orderService.updateOrderStatus(id, dto.status, dto);
   }
 
-  return this.orderService.updateOrderStatus(id, dto.status, dto);
+  // ✅ Supprimez cette méthode en doublon ou renommez-la si elle a un but différent
+  // @Patch(':id/delivery-status')
+  // updateDeliveryStatus(
+  //   @Param('id') id: string,
+  //   @Body() updateDto: UpdateOrderStatusDto,
+  // ): Promise<Order> {
+  //   return this.orderService.updateOrderStatus(id, updateDto.status, updateDto);
+  // }
 }
-  }
- 
-    
-
-  
- 

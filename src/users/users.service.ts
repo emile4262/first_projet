@@ -2,22 +2,43 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma.service';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from 'src/auth/role.decorateur';
-import { create } from 'domain';
+// Suppression des imports inutilisés
+// import { create } from 'domain';
+// import { Admin } from 'typeorm';
 
 @Injectable()
 export class UsersService {
+  
+  findByEmail(email: string) {
+    throw new Error('Method not implemented.');
+  }
+  verifyUser(email: string, password: string) {
+    throw new Error('Method not implemented.');
+  }
+  // Cette méthode sera implémentée plus tard ou peut être supprimée si non utilisée
+  updateUserRole(userId: string, newRole: string) {
+    throw new Error('Method not implemented.');
+  }
+  
+  // Suppression de la propriété orpheline ou définir correctement son utilité
+  // verifyUser: string;
+  
+  // Implémenter la méthode create en réutilisant createUser
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    return this.createUser(createUserDto);
+  }
+  
   constructor(
     private readonly prisma: PrismaService,
-    private jwtService: JwtService
+    private readonly jwtService: JwtService
   ) {}
 
   // ✅ créer un utilisateur
-  async createUser(createUserDto: CreateUserDto, _Roles: string): Promise<User> {
-    const { email, password, firstName, lastName, admin = false } = createUserDto;
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
+    const { email, password, firstName, lastName } = createUserDto;
 
     // vérifier si l'utilisateur existe dejà dans la bd
     const existingUser = await this.prisma.user.findUnique({
@@ -27,11 +48,13 @@ export class UsersService {
     if (existingUser) {
       throw new ConflictException('Cet email est déjà utilisé');
     }
+
+    // if (!email || !password) {
+    //   throw new ConflictException('Email et mot de passe sont requis');
+    // }
     
     const hashedPassword = await bcrypt.hash(password, 8);
-
-    const finalRole = _Roles !== 'admin' ? 'user' : _Roles;
-
+   
     // Créer un nouvel utilisateur
     const user = await this.prisma.user.create({
       data: {
@@ -39,9 +62,9 @@ export class UsersService {
         lastName,
         email,
         password: hashedPassword,
-        admin: true || false ,
+        admin: createUserDto.admin || false,  
+        role: createUserDto.role as Role || Role.admin, 
         createdAt: new Date(),
-        role: finalRole, 
       },
     });
     return user; 
@@ -56,7 +79,7 @@ export class UsersService {
         lastName: true,
         email: true,
         password: true,
-        admin: true || false,
+        admin: false, // Correction de admin: true || false
         role: true,
         createdAt: true,
       },
@@ -81,8 +104,8 @@ export class UsersService {
         lastName: true,
         email: true,
         password: true,
-        admin: true || false,
-        role: true,
+        admin: true,
+        role: true, 
         createdAt: true,
       },
     });
@@ -113,14 +136,15 @@ export class UsersService {
     });
   }
 
-  // connecter un utilisateur
   async login(email: string, password: string): Promise<{ success: boolean; message: string; user?: any; access_token?: string }> {
     try {
       // Recherche de l'utilisateur par email
       const user = await this.prisma.user.findUnique({
-        where: { email },
+        where: {
+          email: email,
+        },
       });
-    
+
       // Vérification si l'utilisateur existe
       if (!user) {
         return {
@@ -128,120 +152,78 @@ export class UsersService {
           message: 'Email incorrect',
         };
       }
-    
+      
       // Vérification du mot de passe
       const isPasswordValid = await bcrypt.compare(password, user.password);
-    
+      
       if (!isPasswordValid) {
         return {
           success: false,
           message: 'Mot de passe incorrect',
         };
       }
-      
+        
       // Gestion spéciale pour l'utilisateur admin
-      const userWithRoles = { ...user };
+      const userWithRoles = { ...user, role: user.admin ? 'admin' : 'user' };
       if (email === 'kassi@gmail.com') {
         userWithRoles.role = 'admin';
       }
-
-      // Générer un token
-      const payload = { sub: user.id, email: user.email, role: userWithRoles.role };
-      console.log("payload", payload);
-      console.log(`Token généré pour l'utilisateur ID: ${user.id}`);
-      const token = this.jwtService.sign(payload);
-    
+      
+      
+       // Génération du token d'accès (JWT)
+      const payload = { 
+        sub: user.id, 
+        email: user.email,
+        role: userWithRoles.role || 'user' // Changement de 'admin' à 'user' comme fallback
+      };
+      const access_token = this.jwtService.sign(payload);
+      
       return {
         success: true,
         message: 'Connexion réussie',
-        access_token: token,
+        access_token: access_token,
         user: {
           id: user.id,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: userWithRoles.role,
           createdAt: user.createdAt,
         }
       };
     } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
       return {
         success: false,
-        message: 'Une erreur est survenue lors de la connexion',
+        message: `Erreur lors de la connexion: ${error.message}`,
       };
     }
   }
+    // créer un user admin  et authentifier
+  async createAdmin(createUserDto: CreateUserDto): Promise<User> {
+    const { email, password, firstName, lastName } = createUserDto;
 
-  /**
-   * Crée un nouvel utilisateur
-   * @param createUserDto DTO contenant les données de l'utilisateur
-   * @returns L'utilisateur créé
-   */
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    try {
-      // Utilisation de la méthode createUserInternal avec les bons paramètres
-      return await this.createUserInternal(createUserDto, 'user');
-    } catch (error) {
-      console.error('Erreur lors de la création de l\'utilisateur:', error);
-      throw new Error(`Impossible de créer l'utilisateur: ${error.message}`);
-    }
-  }
-
-  /**
-   * Méthode interne pour créer un utilisateur (renommée pour éviter les doublons)
-   * @param createUserDto DTO contenant les données de l'utilisateur
-   * @param role Rôle à attribuer à l'utilisateur
-   * @returns L'utilisateur créé
-   */
-  async createUserInternal(createUserDto: CreateUserDto, role: string): Promise<User> {
-    // Vérifie si l'email existe déjà
+    // vérifier si l'utilisateur existe dejà dans la bd
     const existingUser = await this.prisma.user.findUnique({
-      where: { email: createUserDto.email }
+      where: { email },
     });
 
     if (existingUser) {
-      throw new Error('Un utilisateur avec cet email existe déjà');
+      throw new ConflictException('Cet email est déjà utilisé');
     }
 
-    // Cryptage du mot de passe
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    const hashedPassword = await bcrypt.hash(password, 8);
 
-    // Création de l'utilisateur dans la base de données
-    const newUser = await this.prisma.user.create({
+    // Créer un nouvel utilisateur
+    const user = await this.prisma.user.create({
       data: {
-        email: createUserDto.email,
+        firstName,
+        lastName,
+        email,
         password: hashedPassword,
-        firstName: createUserDto.firstName,
-        lastName: createUserDto.lastName,
-        role: role,
-        admin: true || false, 
-      }
+        admin: true,
+        role: 'admin',
+        createdAt: new Date(),
+      },
     });
-
-    return newUser;
-  }
-
-  /**
-   * Méthode pour vérifier les identifiants d'un utilisateur
-   * @param email Email de l'utilisateur
-   * @param password Mot de passe de l'utilisateur
-   * @returns Utilisateur vérifié ou null
-   */
-  async verifyUser(email: string, password: string): Promise<User | null> {
-    // Recherche de l'utilisateur par email
-    const user = await this.prisma.user.findUnique({
-      where: { email }
-    });
-
-    // Vérification si l'utilisateur existe
-    if (!user) {
-      return null;
-    }
-
-    // Vérification du mot de passe
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    return isPasswordValid ? user : null;
+    return user;
   }
 }

@@ -37,7 +37,7 @@ async function bootstrap() {
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
-  ],
+   ],
 })
 export class RootModule {}
 bootstrap();

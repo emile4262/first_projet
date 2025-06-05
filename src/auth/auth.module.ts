@@ -8,6 +8,7 @@ import { ProductController } from 'src/product/product.controller';
 import { UsersController } from 'src/users/users.controller';
 import { ProductModule } from 'src/product/product.module';
 import { UsersModule } from 'src/users/users.module';
+import { CartController } from 'src/cart/cart.controller';
 // import { ProductService } from 'src/product/product.service';
 
 

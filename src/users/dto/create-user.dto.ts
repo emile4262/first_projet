@@ -27,8 +27,8 @@ export class CreateUserDto {
   @IsOptional() 
   admin?: boolean;
 
-  @ApiProperty({ enum: ['admin', 'user'], default: 'admin' })
-  @IsEnum(['admin', 'user'])
+  @ApiProperty({ enum: ['admin', 'admin'], default: 'admin' })
+  @IsEnum(['admin', 'admin'])
   @IsOptional()
   role?: string;
 
@@ -49,13 +49,14 @@ export class LoginUserDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ enum: ['admin', 'user'], default: 'admin' })
-  @IsEnum(['admin', 'user'])
+  @ApiProperty({ enum: ['admin', 'admin'], default: 'admin' })
+  @IsEnum(['admin', 'admin'])
   @IsOptional() 
-  role: string;
-   
+   role: 'user' | 'admin' 
+ 
+ 
   @IsOptional()
   @IsString()
   imageUrl?: string;
- 
+
 }

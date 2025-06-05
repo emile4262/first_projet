@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from '@prisma/client';
 import { UpdateOrderStatusDto } from './dto/update-order.dto';
+import { order } from './entities/order.entity';
 
 // Define OrderStatus enum
 export enum OrderStatus {
@@ -10,55 +11,73 @@ export enum OrderStatus {
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
 }
+// export enum DeliveryStatus {
+//   PENDING = 'PENDING',
+//   SHIPPED = 'SHIPPED',
+//   DELIVERED = 'DELIVERED',
+//   CANCELED = 'CANCELED',
+// }
 
 @Injectable()
-export class OrderService {
+export class OrderService  {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Créer un order
-  async create(data: CreateOrderDto): Promise<Order> {
-    // Récupérer le produit pour obtenir son prix
-    const product = await this.prisma.product.findUnique({
+  // Créer un order 
+ async create(data: CreateOrderDto): Promise<Order> {
+  // Récupérer le produit pour obtenir son prix
+  const product = await this.prisma.product.findUnique({
+    where: { id: data.productId },
+    select: { 
+      price: true,
+      stock: true,
+      Is_available: true
+    },
+  });
+
+  // Vérifier si le produit existe
+  if (!product) {
+    throw new NotFoundException('Produit non trouvé');
+  }
+
+  // Vérifier si le produit est disponible
+  if (!product.Is_available) {
+    throw new BadRequestException('Produit non disponible');
+  }
+
+  // Vérifier si le produit a encore du stock
+  if (product.stock === 0) {
+    throw new BadRequestException('Le produit n\'a plus de stock disponible');
+  }
+
+  // Vérifier si la quantité demandée est disponible
+  if (data.quantity > product.stock) {
+    throw new BadRequestException('Quantité demandée supérieure au stock disponible');
+  }
+
+  
+  return await this.prisma.$transaction(async (tx) => {
+    // Mettre à jour le stock
+    await tx.product.update({
       where: { id: data.productId },
-      select: { 
-        price: true,
-        stock: true,
-        Is_available: true
+      data: {
+        stock: product.stock - data.quantity,
       },
     });
 
-   // Vérifier si le produit existe
-if (!product) {
-  throw new NotFoundException('Produit non trouvé');
-}
-
-// Vérifier si le produit est disponible
-if (!product.Is_available) {
-  throw new BadRequestException('Produit non disponible');
-}
-
-// Vérifier si le produit a encore du stock
-if (product.stock === 0) {
-  throw new BadRequestException('Le produit n\'a plus de stock disponible');
-}
-
-// Vérifier si la quantité demandée est disponible
-if (data.quantity > product.stock) {
-  throw new BadRequestException('Quantité demandée supérieure au stock disponible');
-}
-
-
-    // Créer la commande avec le prix du produit et status PENDING
-    const order = await this.prisma.order.create({
+    // Créer la commande dans la même transaction
+    return tx.order.create({
       data: {
         productId: data.productId,
         quantity: data.quantity,
         price: product.price * data.quantity,
-        status: OrderStatus.PENDING, // Utiliser l'énumération au lieu d'une chaîne
-         },
+        status: OrderStatus.PENDING,
+        userId: data.userId,
+        // deliveryStatus: 'PENDING',
+        // deliveryAddress: data.deliveryAddress,
+      },
     });
-    return order;
-  }
+  });
+}
 
   // Obtenir tous les orders
   async getAllOrders(): Promise<Order[]> {
@@ -100,52 +119,100 @@ if (data.quantity > product.stock) {
   // Mettre à jour le statut d'une commande
 
  async updateOrderStatus(
-id: string, status: OrderStatus, dto: UpdateOrderStatusDto): Promise<Order> {
+  id: string,
+  status: OrderStatus,
+  dto: UpdateOrderStatusDto
+): Promise<Order> {
   const order = await this.prisma.order.findUnique({ where: { id } });
 
-  // Extraire la raison du DTO
-  const reason = dto.reason;
-
-  // Vérifier si la commande existe
+  // verification de l'existence de la commande
   if (!order) {
     throw new NotFoundException(`Commande avec l'ID ${id} non trouvée`);
   }
 
-  // Vérifier que la commande est bien en statut PENDING
+  // verification du statut de la commande
   if (order.status !== OrderStatus.PENDING) {
     throw new BadRequestException('Seules les commandes en attente peuvent être modifiées');
   }
 
-  // Valider le nouveau statut
+  // Vérification du statut
   if (status !== OrderStatus.APPROVED && status !== OrderStatus.REJECTED) {
     throw new BadRequestException('Le statut doit être APPROVED ou REJECTED');
   }
 
-  // Validation spécifique au statut
-  if (status === OrderStatus.REJECTED && (!reason || reason.trim() === '')) {
-    throw new BadRequestException('Une raison de rejet est requise pour rejeter une commande');
-  }
+  // Vérification de la raison pour le statut REJECTED
+  const reason = dto.reason;
 
-if (status === OrderStatus.APPROVED) {
-  // Mettre à jour le statut de la commande avec la raison
-  return this.prisma.order.update({
-    where: { id },
-    data: {
-      status: status
-    },
-  });
-} else if (status === OrderStatus.REJECTED) {
-  // Mettre à jour le statut de la commande avec la raison de rejet
-  return this.prisma.order.update({
-    where: { id },
-    data: {
-      status: status,
-      statusReason: reason
-    },
-  });
+ if (status === OrderStatus.REJECTED && (!reason || reason.trim() === '')) {
+  throw new BadRequestException('Une raison de rejet est requise pour rejeter une commande');
 }
 
-// Si aucun des statuts n'est valide, lever une exception (ce cas ne devrait pas arriver à cause des validations précédentes)
-throw new BadRequestException('Statut de commande invalide');
-}
-  }
+  if (status === OrderStatus.APPROVED) {
+    // Simple update sans remboursement de stock
+    return this.prisma.order.update({
+      where: { id },
+      data: {
+        status: status,
+      },
+    });
+  } else if (status === OrderStatus.REJECTED) {
+    // 🧠 On utilise une transaction pour remettre le stock + mettre à jour la commande
+    return this.prisma.$transaction(async (tx) => {
+      // Récupération de la commande complète avec le produit
+      const orderWithProduct = await tx.order.findUnique({
+        where: { id },
+        select: {
+          productId: true,
+          quantity: true,
+        },
+      });
+
+      if (!orderWithProduct) {
+        throw new NotFoundException(`Commande avec l'ID ${id} non trouvée`);
+      }
+
+      // Remettre le stock du produit
+      await tx.product.update({
+        where: { id: orderWithProduct.productId },
+        data: {
+          stock: {
+            increment: orderWithProduct.quantity, // 👈 On ajoute la quantité
+          },
+        },
+      });
+
+      // Mettre à jour le statut de la commande
+       return tx.order.update({
+        where: { id },
+        data: {
+        status: status,
+        statusReason: reason, // ✅ on stocke la raison ici
+       },
+       });
+       
+      });
+      }
+
+  // Ajout d'une exception explicite si aucun chemin précédent n'est pris
+  throw new BadRequestException('Statut de commande invalide');
+ }
+// async updateDeliveryStatus(id: string, dto: UpdateOrderStatusDto): Promise<Order> {
+//   const order = await this.prisma.order.findUnique({ where: { id } });
+
+//   if (!order) {
+//     throw new NotFoundException(`Commande avec l'ID ${id} non trouvée`);
+//   }
+
+//   return this.prisma.order.update({
+//     where: { id },
+//     data: {
+//       deliveryStatus: dto.deliveryStatus,
+//       deliveryDate: dto.deliveryStatus === 'DELIVERED' ? new Date() : null,
+//     },
+//   });
+ }
+
+
+
+
+

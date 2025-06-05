@@ -24,6 +24,11 @@ import { OrderModule } from './order/order.module';
 import { OrderController } from './order/order.controller';
 import { OrderService } from './order/order.service';
 // import { CartModule } from './cart/cart.module';
+import { ReviewModule } from './review/review.module';
+import { ReviewController } from './review/review.controller';
+import { ReviewService } from './review/review.service';
+import { CartService } from './cart/cart.service';
+import { CartController } from './cart/cart.controller';
 
 
 @Module({
@@ -40,13 +45,11 @@ import { OrderService } from './order/order.service';
     }),
     // CartModule,
     OrderModule,
+    ReviewModule,
     
   ],
-  controllers: [AppController, UsersController,ProductController,CategoryController , OrderController],
-  providers: [
-    AppService,
-    PrismaService,
-    UsersService, ProductService, CategoryService, OrderService
+  controllers: [AppController, UsersController,ProductController,CategoryController , OrderController, ReviewController, CartController],
+  providers: [AppService,PrismaService, UsersService, ProductService, CategoryService, OrderService, ReviewService,CartService,
     // {
     //   provide: APP_GUARD,
     //   useClass: AuthGuard('jwt'),

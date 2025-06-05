@@ -7,6 +7,7 @@ import { product } from '@prisma/client'; // Utilisation du nom en minuscule
 @Injectable()
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
+ 
   
   async create(data: CreateProductDto): Promise<product> {
   // Vérifier si la catégorie existe
@@ -46,25 +47,16 @@ export class ProductService {
 
 
   // obtenir tous les produits
-  async findAll() {
-    return this.prisma.product.findMany({
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        price: true,
-        stock: true,
-        imageUrl: true,
-        createdAt: true,
-        updatedAt: true,
-        category: {
-          select: {
-            name: true,
-          }
-        } 
-      }
-    });
-  }
+ async findAll({ search }: { search?: string }) {
+  return this.prisma.product.findMany({
+    where: {
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ],
+    },
+  });
+}
    
   // obtenir un produit par son id
   async findOne(id: string): Promise<product | null> {
@@ -154,4 +146,6 @@ export class ProductService {
       where: { id },
     });
   }
+  
+
 }

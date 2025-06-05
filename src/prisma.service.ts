@@ -11,13 +11,13 @@ constructor() {
   async onModuleInit() {
     await this.$connect();
   }
-  async $connect(): Promise<void> {
-    return super.$connect();
-  }
+  // async $connect(): Promise<void> {
+  //   return super.$connect();
+  // }
   async onModuleDestroy() {
     await this.$disconnect();
   }
-  async $disconnect(): Promise<void> {
-    return super.$disconnect();
-  }
+  // async $disconnect(): Promise<void> {
+  //   return super.$disconnect();
+  // }
 }
