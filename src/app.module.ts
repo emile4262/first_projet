@@ -27,8 +27,13 @@ import { OrderService } from './order/order.service';
 import { ReviewModule } from './review/review.module';
 import { ReviewController } from './review/review.controller';
 import { ReviewService } from './review/review.service';
-import { CartService } from './cart/cart.service';
+import { PaymentService } from './payement/payement.service';
+import { PaymentController } from './payement/payement.controller';
+import { PaymentModule } from './payement/payement.module';
+import { CartModule } from './cart/cart.module';
 import { CartController } from './cart/cart.controller';
+import { CartService } from './cart/cart.service';
+
 
 
 @Module({
@@ -38,7 +43,7 @@ import { CartController } from './cart/cart.controller';
     }),
     //UsersModule,
     AuthModule,
-    UsersModule, ProductModule,CategoryModule,
+    UsersModule, ProductModule,CategoryModule, PaymentModule , CartModule,
     ServeStaticModule.forRoot({ // Configurez ServeStaticModule ici
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
@@ -46,10 +51,11 @@ import { CartController } from './cart/cart.controller';
     // CartModule,
     OrderModule,
     ReviewModule,
+    CartModule,
     
   ],
-  controllers: [AppController, UsersController,ProductController,CategoryController , OrderController, ReviewController, CartController],
-  providers: [AppService,PrismaService, UsersService, ProductService, CategoryService, OrderService, ReviewService,CartService,
+  controllers: [AppController, UsersController, ProductController, OrderController,CategoryController, ReviewController, PaymentController, CartController],
+  providers: [AppService, UsersService, ProductService, OrderService, CategoryService,ReviewService, PaymentService, CartService
     // {
     //   provide: APP_GUARD,
     //   useClass: AuthGuard('jwt'),

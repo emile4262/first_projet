@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { IsEmail, IsNotEmpty, MinLength, IsString, IsBoolean, IsOptional, IsEnum } from 'class-validator';
 
 export class CreateUserDto {
@@ -22,20 +23,22 @@ export class CreateUserDto {
   @MinLength(8)
   password: string;
 
-  @ApiProperty({ type: Boolean, default: true })
-  @IsBoolean()
-  @IsOptional() 
-  admin?: boolean;
+  // @ApiProperty({ type: Boolean, default: true })
+  // @IsBoolean()
+  // @IsOptional() 
+  // admin?: boolean;
 
-  @ApiProperty({ enum: ['admin', 'admin'], default: 'admin' })
-  @IsEnum(['admin', 'admin'])
-  @IsOptional()
-  role?: string;
+  // @ApiProperty({ enum: ['admin', 'admin'], default: 'admin' })
+  // @IsEnum(['admin', 'admin'])
+  // @IsOptional()
+  // role?: string;
 
   @ApiProperty()
   @IsString()
   @IsOptional()
   createdAt: Date;
+  admin: boolean;
+  role: Role;
 }
 
 export class LoginUserDto {
@@ -49,14 +52,14 @@ export class LoginUserDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ enum: ['admin', 'admin'], default: 'admin' })
-  @IsEnum(['admin', 'admin'])
-  @IsOptional() 
-   role: 'user' | 'admin' 
+  // @ApiProperty({ enum: ['admin', 'admin'], default: 'admin' })
+  // @IsEnum(['admin', 'admin'])
+  // @IsOptional() 
+  //  role: 'user' | 'admin' 
  
  
-  @IsOptional()
-  @IsString()
-  imageUrl?: string;
+  // @IsOptional()
+  // @IsString()
+  // imageUrl?: string;
 
 }

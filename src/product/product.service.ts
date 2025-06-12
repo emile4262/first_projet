@@ -7,47 +7,58 @@ import { product } from '@prisma/client'; // Utilisation du nom en minuscule
 @Injectable()
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
- 
-  
+
   async create(data: CreateProductDto): Promise<product> {
-  // Vérifier si la catégorie existe
-  const category = await this.prisma.category.findUnique({
-    where: { id: data.categoryId },
-  });
+    // Vérifier si la catégorie existe
+    const category = await this.prisma.category.findUnique({
+      where: { id: data.categoryId },
+    });
 
-  if (!category) {
-    throw new NotFoundException(`Catégorie avec l'ID ${data.categoryId} non trouvée`);
+    if (!category) {
+      throw new NotFoundException(`Catégorie avec l'ID ${data.categoryId} non trouvée`);
+    }
+
+    // Vérifier si le stock initial est valide
+    if (data.stockInitial <= 0) {
+      throw new BadRequestException('Le produit doit avoir un stock initial supérieur à 0');
+    }
+
+    // Créer le produit avec stockInitial et stockFinal
+    const product = await this.prisma.product.create({
+      data: {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        stockInitial: data.stockInitial,
+        stockFinal: data.stockInitial,
+        category: {
+          connect: { id: data.categoryId },
+        },
+        user: {
+          connect: { id: data.userId },
+        },
+      },
+    });
+
+    return product;
   }
 
-  // Vérifier si produit est disponible
-  if (data.stock <= 0) {
-    throw new BadRequestException('Le produit doit avoir un stock supérieur à 0');
+
+ // Tous les produits
+ async findAll() {
+    return this.prisma.product.findMany();
   }
 
-  // Créer le produit
-  const product = await this.prisma.product.create({
-    data: {
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      stock: data.stock,
-      Is_available: true, 
-      products_Number: 5, 
-      category: {
-        connect: { id: data.categoryId },
+  async findAllWithCategory() {
+    return this.prisma.product.findMany({
+      include: {
+        category: true,
       },
-      user: {
-        connect: { id: data.userId },
-      },
-    },
-  });
+    });
+  }
 
-  return product;
-}
-
-
-  // obtenir tous les produits
- async findAll({ search }: { search?: string }) {
+// Produits filtrés par mot-clé
+async searchProducts(search: string) {
   return this.prisma.product.findMany({
     where: {
       OR: [
@@ -57,8 +68,10 @@ export class ProductService {
     },
   });
 }
+
+
    
-  // obtenir un produit par son id
+   // obtenir un produit par son id
   async findOne(id: string): Promise<product | null> {
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -67,14 +80,14 @@ export class ProductService {
         name: true,
         description: true,
         price: true,
-        stock: true,
+        stockInitial: true,
+        stockFinal: true,  
         categoryId: true,
         imageUrl: true,
         createdAt: true,
         updatedAt: true,
         userId: true,
         Is_available: true,
-        products_Number: true,
         user: {
           select: {
             id: true,
@@ -116,21 +129,22 @@ export class ProductService {
   
   // Mettre à jour l'image d'un produit
   async updateProductImage(productId: string, imageUrl: string): Promise<product> {
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-    });
-    
-    if (!product) {
-      throw new NotFoundException(`Produit avec l'ID ${productId} non trouvé`);
-    }
-    
-    return this.prisma.product.update({
-      where: { id: productId },
-      data: {
-        imageUrl: imageUrl
-      }
-    });
+  const product = await this.prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!product) {
+    throw new NotFoundException(`Produit avec l'ID ${productId} non trouvé`);
   }
+
+  return this.prisma.product.update({
+    where: { id: productId },
+    data: {
+      imageUrl: imageUrl
+    }
+  });
+}
+
   
   // supprimer un produit
   async remove(id: string): Promise<product> {

@@ -14,34 +14,25 @@ export class CreateProductDto {
     @IsNotEmpty()
     @IsNumber()
     price: number;
-
-    @ApiProperty()
-    @IsNotEmpty()
-    @IsNumber()
-    stock: number;
+    
 
     @ApiProperty()
     @IsNotEmpty()
     categoryId: string;
     
-    // @ApiProperty()
-    // @IsString()
-    // id: string;
+   @ApiProperty()
+    @IsNotEmpty()
+    @IsNumber()
+    stockInitial: number;
 
     @ApiProperty()
     @IsNotEmpty()
     userId: string;
 
-    @ApiProperty()
-    @IsNotEmpty()
-    imageUrl?: string;
-
     // @ApiProperty()
     // @IsNotEmpty()
-    // is_available?: boolean;
+    // imageUrl?: string;
 
-    // @ApiProperty()
-    // @IsNotEmpty()
-    // product_number: number
+   
 
 }

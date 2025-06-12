@@ -8,8 +8,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { extname, join } from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags,} from '@nestjs/swagger';
-import { Public } from 'src/auth/public.decorateur';
-import { Response } from 'express';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
 
@@ -87,20 +85,33 @@ export class ProductController {
   @Roles(Role.admin)
   @ApiBearerAuth()
   create(@Body() createProductDto: CreateProductDto) {
-    return this.productService.create(createProductDto);
+  return this.productService.create(createProductDto);
   }
-   
 
-  @ApiOperation({ summary: 'Récupérer tous les produits' })
-  @ApiResponse({ status: 200, description: 'Liste des produits récupérée avec succès' })
+   @Get()
+findAll() {
+  return this.productService.findAll(); // retourne juste les produits
+}
+
+@Get('with-category')
+findAllWithCategory() {
+  return this.productService.findAllWithCategory(); 
+}
+
+
+  // Route: GET /products/search?search=xxx
+   @ApiOperation({ summary: 'Rechercher les products' })
+  @ApiParam({ name: 'recherche', description: 'rechercher un product' })
+  @ApiResponse({ status: 200, description: 'Produit récupéré avec succès' })
+  @ApiResponse({ status: 404, description: 'Produit non trouvé' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Get('products')
+  @Get('search')
   @Roles(Role.admin)
-  findAll(@Query('search') search?: string) {
-  return this.productService.findAll({ search });
-}
+  async search(@Query('search') search: string) {
+    return this.productService.searchProducts(search);
+  }
 
   @ApiOperation({ summary: 'Récupérer un produit par son ID' })
   @ApiParam({ name: 'id', description: 'ID du produit' })

@@ -1,171 +1,235 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { PrismaService } from 'src/prisma.service';
-import { Cart } from '@prisma/client';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCartDto } from './dto/create-cart.dto';
-import { UpdateCartStatusDto } from './dto/update-cart.dto';
+import { UpdateCartDto } from './dto/update-cart.dto';
+import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
 export class CartService {
-  constructor(public readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  // 🛒 Créer un panier ou ajouter un produit à un panier existant
- async create(data: CreateCartDto, userId: string): Promise<Cart> {
-  const {
-    productId,
-    quantity,
-    
-  } = data;
+  /** -------------------- CRÉATION -------------------- */
+  async create(createCartDto: CreateCartDto) {
 
- 
+// verifie que l'utilisateur existe
+    const user = await this.prisma.user.findUnique({
+       where: { id: createCartDto.userId },
+    })
 
-    //  Vérification du produit 
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: {
-        id: true,
-        stock: true,
-        Is_available: true,
-        price: true,
-      },
-    });
-    console.log('Product trouvé ?', product);
-    if (!product) throw new NotFoundException('Produit non trouvé');
-    if (!product.Is_available) throw new BadRequestException('Produit non disponible');
-    if (product.stock < quantity) throw new BadRequestException('Stock insuffisant');
-
-    // Recherche d’un panier existant pour cet utilisateur ---
-    const existingCart = await this.prisma.cart.findFirst({
-      where: { userId },
-      include: {
-        cartProducts: true, // Inclure les produits pour vérifier si le produit existe déjà dans le panier
-      },
-    });
-
-    const productPrice = product.price;
-    const totalPrice = productPrice * quantity;
-
-    //  Logique conditionnelle : Panier existant ou nouveau panier ---
-    if (existingCart) {
-      // Panier existant : Mettre à jour la quantité d'un produit ou ajouter un nouveau produit
-      const existingCartProduct = existingCart.cartProducts.find(
-        (p) => p.productId === productId,
-      );
-
-      if (existingCartProduct) {
-        // Le produit est déjà dans le panier : Mettre à jour sa quantité
-        await this.prisma.cartproduct.update({
-          where: { id: existingCartProduct.id },
-          data: {
-            quantity: existingCartProduct.quantity + quantity,
-          },
-        });
-      } else {
-        // Le produit n'est pas dans le panier : Ajouter le produit au panier existant
-        await this.prisma.cartproduct.create({
-          data: {
-            cartId: existingCart.id,
-            productId,
-            quantity,
-          },
-        });
-      }
-
-      // Retourne le panier mis à jour avec ses produits
-      const updatedCart = await this.prisma.cart.findUnique({
-        where: { id: existingCart.id },
-        include: { cartProducts: true },
-      });
-
-      if (!updatedCart) {
-        throw new NotFoundException('Panier non trouvé après la mise à jour (ceci ne devrait pas arriver)');
-      }
-      return updatedCart;
-
-    } else {
-      // Pas de panier existant : Créer un nouveau panier pour l'utilisateur
-      if (!userId) {
-        throw new NotFoundException('L\'ID de l\'utilisateur est requis pour créer un panier.');
-      }
-
-      // Création du nouveau panier avec l'utilisateur et le premier produit
-      const newCart = await this.prisma.cart.create({
-        data: {
-          user: {
-            connect: {
-              id: userId,
-            },
-          },
-          cartProducts: {
-            create: [
-              {
-                productId,
-                quantity,
-              },
-            ],
-          },
-        },
-      });
-
-    // Retourne le nouveau panier créé
-    return newCart;
+    if(!user) {
+      throw new NotFoundException(`Utilisateur avec identifiant ${createCartDto.userId} pas trouvé`);
     }
+
+    // Vérifie si un panier actif existe déjà pour l'utilisateur
+   const existingActiveCart = await this.prisma.cart.findFirst({
+    where: {
+      userId: createCartDto.userId,
+      status: 'ACTIVE',
+    },
+  });
+
+  if(existingActiveCart){
+    throw new ConflictException(`Un panier actif existe déjà pour l'utilisateur ${createCartDto.userId}`);
   }
 
-  // 📦 Récupérer tous les paniers
-  async findAll(cartId: string): Promise<Cart[]> {
+    return this.prisma.cart.create({
+      data: {
+        ...createCartDto,
+        status: 'ACTIVE',
+        total: 0,
+      },
+      include: { products: true },
+    });
+  }
+
+  /** -------------------- LECTURE -------------------- */
+  async findAll() {
     return this.prisma.cart.findMany({
-      where: { id : cartId },
       include: {
-        cartProducts: true,
+        products: true,
+        user: true,
       },
     });
   }
 
-  // 💰 Récupérer le total du panier pour un utilisateur
-  async getTotalCart(userId: string): Promise<number> {
+
+  async findByUserId(userId: string) {
     const cart = await this.prisma.cart.findFirst({
-      where: { userId },
-      include: {
-        cartProducts: {
-          include: {
-            product: true,
-          },
-        },
+      where: { 
+        userId,
+        status: 'ACTIVE',
       },
+      include: { products: true },
+      orderBy: { createdAt: 'desc' },
     });
 
-    if (!cart || cart.cartProducts.length === 0) return 0;
+    if (!cart) {
+      throw new NotFoundException(`Active cart not found for user ${userId}`);
+    }
 
-    // ➗ Calcul du total
-    return cart.cartProducts.reduce((total, cartProduct) => {
-      return total + cartProduct.quantity * cartProduct.product.price;
-    }, 0);
-  }
-
-  // 🔄 Mise à jour du statut d’un panier
-  async updateCartStatus(cartProductId: number, dto: UpdateCartStatusDto, id: string): Promise<Cart> {
-    const cart = await this.prisma.cart.findUnique({ where: { id } });
-    if (!cart) throw new NotFoundException('Panier non trouvé');
     return cart;
   }
 
-    //  suprimer  les produit dans un panier
-async remove(id: string, cartProductId: string): Promise<void> { 
-    const cartProduct = await this.prisma.cartproduct.findUnique({
-    where: { id: cartProductId },
-  });
+  async getProductCount(id: string) {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id },
+      include: { 
+        products: {
+          select: { id: true },
+        },
+      },
+    });
 
-  if (!cartProduct) {
-    throw new NotFoundException('Produit du panier non trouvé');
+    if (!cart) {
+      throw new NotFoundException(`Cart with id ${id} not found`);
+    }
+
+    return cart.products.length;
   }
 
-  await this.prisma.cartproduct.delete({
-    where: { id: cartProductId }, 
+  async hasProduct(cartId: string, productId: string) {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      include: { 
+        products: {
+          where: { id: productId },
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with id ${cartId} not found`);
+    }
+
+    return cart.products.length > 0;
+  }
+
+  /** -------------------- MISE À JOUR -------------------- */
+  async update(id: string, updateCartDto: UpdateCartDto) {
+    return this.prisma.cart.update({
+      where: { id },
+      data: updateCartDto,
+      include: { products: true },
+    });
+  }
+
+  async updateCartTotal(id: string, newTotal: number) {
+    return this.prisma.cart.update({
+      where: { id },
+      data: { total: newTotal },
+    });
+  }
+
+  async changeCartStatus(
+    id: string,
+    status: 'ACTIVE' | 'COMPLETED' | 'ABANDONED',
+  ) {
+    return this.prisma.cart.update({
+      where: { id },
+      data: { status },
+    });
+  }
+
+  async addProduct(cartId: string, productId: string) {
+    // Vérifie que le produit existe
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with id ${productId} not found`);
+    }
+
+    // Ajoute le produit au panier
+    const updatedCart = await this.prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        products: {
+          connect: { id: productId },
+        },
+        total: {
+          increment: product.price, // Met à jour le total
+        },
+      },
+      include: { products: true },
+    });
+
+    return updatedCart;
+  }
+
+  async removeProduct(cartId: string, productId: string) {
+    // Vérifie que le produit existe
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with id ${productId} not found`);
+    }
+
+    // Supprime le produit du panier
+    const updatedCart = await this.prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        products: {
+          disconnect: { id: productId },
+        },
+        total: {
+          decrement: product.price, // Met à jour le total
+        },
+      },
+      include: { products: true },
+    });
+
+    return updatedCart;
+  }
+
+  async findOne(id: string) {
+  const cart = await this.prisma.cart.findUnique({
+    where: { id },
+    include: { products: true },
   });
+
+  if (!cart) {
+    throw new NotFoundException(`Cart with id ${id} not found`);
+  }
+
+  const total = cart.products.reduce((sum, product) => {
+    return sum + product.price;
+  }, 0);
+
+  return { ...cart, total };
 }
 
+
+  /** -------------------- SUPPRESSION -------------------- */
+  async remove(id: string) {
+    return this.prisma.cart.delete({
+      where: { id },
+      include: { products: true },
+    });
+  }
+
+  async clearCart(cartId: string) {
+    // Récupère le panier avec les produits pour calculer le total
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      include: { products: true },
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Cart with id ${cartId} not found`);
+    }
+
+    // Vide le panier et réinitialise le total
+    return this.prisma.cart.update({
+      where: { id: cartId },
+      data: {
+        products: {
+          set: [],
+        },
+        total: 0,
+      },
+    });
+  }
 }

@@ -13,56 +13,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model User {
   id        String    @id @default(uuid())
-  firstName String
-  lastName  String
+  firstName       String
+  lastName        String
   email     String    @unique
   password  String
   admin     Boolean
-  role      Role      @default(admin)
+  refreshToken String? 
+  role      Role      @default(user)
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   products  product[]
-  Cart      Cart[]
   orders    Order[]
-  Review    Review[]
+  reviews    Review[]
+   carts     Cart[]
 }
 
-model post {
-  id        String   @unique
-  title     String
-  content   String
-  published Boolean
-  createdAT DateTime
-  authorId  String
+enum Role {
+  user
+  admin 
+}
+
+model product {
+  id              String         @id @default(uuid())
+  name            String
+  description     String
+  price           Float
+  imageUrl        String?
+  userId          String
+  categoryId      String
+ stockInitial  Int      
+  stockFinal    Int      
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  Is_available    Boolean        @default(true)
+  OrderProducts OrderProduct[]
+  reviews       Review[]
+  category        category       @relation(fields: [categoryId], references: [id])
+  user            User?          @relation(fields: [userId], references: [id])
+
+  Cart Cart[]
 }
 
 model category {
   id      String    @id @default(cuid())
   name    String
   product product[]
-}
-
-model product {
-  id              String   @id @default(uuid())
-  name            String
-  description     String
-  price           Float
-  imageUrl        String?
-  stock           Int
-  categoryId      String
-  userId          String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  Is_available    Boolean  @default(true)
-  products_Number Int      @default(0)
-
-  category      category       @relation(fields: [categoryId], references: [id])
-  user          User?          @relation(fields: [userId], references: [id])
-  reviews       Review[]
-  cartProducts  Cartproduct[]
-  OrderProducts OrderProduct[]
-  Order         Order[]
 }
 
 enum OrderStatus {
@@ -78,11 +76,11 @@ model Order {
   userId       String
   createdAt    DateTime    @default(now())
   price        Float
+  total        Int
   status       OrderStatus @default(PENDING)
   statusReason String?
   Is_available Boolean     @default(true)
-
-  product product @relation(fields: [productId], references: [id])
+  payments  Payment[]
   user    User    @relation(fields: [userId], references: [id])
 
   products OrderProduct[]
@@ -113,26 +111,61 @@ model Review {
   @@map("reviews")
 }
 
-model Cart {
+model Payment {
   id            String        @id @default(uuid())
-  userId        String        @unique
+  amount        Float         
+  status        PaymentStatus @default(PENDING)
+  paymentMethod String?       
+  reference     String?       @unique 
+  description   String?
+  // metadata      Json?         
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  user          User          @relation(fields: [userId], references: [id])
-  cartProducts   Cartproduct[]
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Relations pour les remboursements
+  refunds       Payment[] @relation("PaymentRefunds")
+  originalPayment Payment? @relation("PaymentRefunds", fields: [originalPaymentId], references: [id])
+  originalPaymentId String?
+
+
+  @@map("payments")
 }
 
-model Cartproduct {
-  id        String   @id @default(uuid())
-  cartId    String
-  productId String
-  quantity  Int
+
+
+// Enums
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIAL_REFUND
+}
+
+
+
+model Cart {
+  id        String       @id @default(uuid())
+  userId    String
+  status    CartStatus @default(ACTIVE)
+  total     Float    @default(0)
   createdAt DateTime @default(now())
-  cart      Cart     @relation(fields: [cartId], references: [id])
-  product   product  @relation(fields: [productId], references: [id])
+  updatedAt DateTime @updatedAt
+  products product[]
+  // Relations
+  user      User       @relation(fields: [userId], references: [id])
 }
 
-enum Role {
-  user
-  admin
+
+  
+
+
+enum CartStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
 }
