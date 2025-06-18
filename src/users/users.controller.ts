@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
-import { CreateUserDto, LoginUserDto } from './dto/create-user.dto';
+import { CreateUserDto, LoginUserDto, ResetPasswordDto, VerifyOtpDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -82,4 +82,40 @@ export class UsersController {
     await this.usersService.remove(id);
     return { message: `Utilisateur ${id} supprimé avec succès` };
   }
+
+   // Endpoints publics (sans authentification)
+@Post('forgot-password')
+// @UseGuards(JwtAuthGuard, RolesGuard) 
+// @Roles(Role.admin, Role.user)
+@ApiOperation({ summary: 'Demander un OTP pour réinitialiser le mot de passe (public)' })
+async forgotPassword(@Body() dto: ResetPasswordDto) {
+  return this.usersService.sendOtp(dto);
+}
+
+@Post('reset-password')
+// @UseGuards(JwtAuthGuard, RolesGuard) 
+// @Roles(Role.admin, Role.user)
+@ApiOperation({ summary: 'Réinitialiser le mot de passe avec OTP (public)' })
+async resetPassword(@Body() dto: VerifyOtpDto) {
+  return this.usersService.resetPasswordWithOtp(dto);
+}
+
+// // Endpoints admin (avec authentification)
+// @Post('admin/send-otp')
+// @UseGuards(JwtAuthGuard, RolesGuard) 
+// @Roles(Role.admin)
+// @ApiBearerAuth()
+// @ApiOperation({ summary: 'Admin: Envoyer un OTP à un utilisateur' })
+// async adminSendOtp(@Body() dto: ResetPasswordDto) {
+//   return this.usersService.sendOtp(dto);
+// }
+
+// @Post('admin/reset-password')
+// @UseGuards(JwtAuthGuard, RolesGuard) 
+// @Roles(Role.admin)
+// @ApiBearerAuth()
+// @ApiOperation({ summary: 'Admin: Réinitialiser le mot de passe d\'un utilisateur' })
+// async adminResetPassword(@Body() dto: VerifyOtpDto) {
+//   return this.usersService.resetPasswordWithOtp(dto);
+// }
 }

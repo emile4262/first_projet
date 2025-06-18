@@ -13,7 +13,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
-import { CreateCartDto } from './dto/create-cart.dto';
+import { AddProductDto, CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -27,7 +27,7 @@ import { StringifyOptions } from 'querystring';
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
-  /** -------------------- CRÉATION -------------------- */
+//  creer un nouveau panier
   @Post()
   @ApiOperation({ summary: 'Créer un nouveau panier' })
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -37,8 +37,7 @@ export class CartController {
     return this.cartService.create(createCartDto);
   }
 
-  /** -------------------- LECTURE -------------------- */
-
+//  recupère tous les paniers
   @Get()
   @ApiOperation({ summary: 'Récupérer tous les paniers' })
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -48,100 +47,73 @@ export class CartController {
     return this.cartService.findAll();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Récupérer un panier par ID' })
+   
+//  recupère un panier par son identifiant
+@Get(':id')
+  @ApiOperation({ summary: 'Récupérer un panier par son identifiant' })
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin)
-  @HttpCode(HttpStatus.OK)
+  @Roles(Role.admin, Role.user)
   findOne(@Param('id') id: string) {
     return this.cartService.findOne(id);
   }
 
+  //  recupère un panier par l'identifiant de l'utilisateur
   @Get('user/:userId')
-  @ApiOperation({ summary: "Récupérer le panier actif d'un utilisateur" })
+  @ApiOperation({ summary: 'Récupérer un panier par l\'identifiant de l\'utilisateur' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin, Role.user)
-  @HttpCode(HttpStatus.OK)
-  findByUserId(@Param('userId', ParseIntPipe) userId: string) {
+  findByUser(@Param('userId') userId: string) {
     return this.cartService.findByUserId(userId);
   }
 
-  @Get(':id/count')
-  @ApiOperation({ summary: 'Obtenir le nombre total d’éléments dans un panier' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin)
-  @HttpCode(HttpStatus.OK)
-  getItemsCount(@Param('id', ParseIntPipe) id: string) {
-    return this.cartService.getProductCount(id);
-  }
-
-  @Get(':id/has-product/:productId')
-  @ApiOperation({ summary: 'Vérifier si un produit est dans le panier' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin, Role.user)
-  @HttpCode(HttpStatus.OK)
-  hasProduct(
-    @Param('id', ParseIntPipe) id: string,
-    @Param('productId', ParseIntPipe) productId: string
+  //  modifier le statut d'un panier
+  @Patch(':id/add-product')
+  addProduct(
+    @Param('id') cartId: string,
+    @Body() addProductDto: AddProductDto,
   ) {
-    return this.cartService.hasProduct(id, productId);
+    return this.cartService.addProduct(
+      cartId,
+      addProductDto.productId,
+      addProductDto.quantity,
+    );
   }
 
-  /** -------------------- MISE À JOUR -------------------- */
-
+  // @Patch(':id/remove-product/:productId')
+  // removeProduct(
+  //   @Param('id') cartId: string,
+  //   @Param('productId') productId: string,
+  // ) {
+  //   return this.cartService.removeProduct(cartId, productId);
+  // }
+ 
+  //  modifier un panier
   @Patch(':id')
-  @ApiOperation({ summary: 'Mettre à jour un panier' })
+  @ApiOperation({ summary: 'Modifier un panier' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin, Role.user)
-  @HttpCode(HttpStatus.OK)
   update(
-    @Param('id', ParseIntPipe) id: string,
-    @Body(ValidationPipe) updateCartDto: UpdateCartDto
+    @Param('id') id: string,
+    @Body() updateCartDto: UpdateCartDto,
   ) {
     return this.cartService.update(id, updateCartDto);
   }
 
-  @Patch(':id/total')
-  @ApiOperation({ summary: 'Mettre à jour le total du panier' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin, Role.user)
-  @HttpCode(HttpStatus.OK)
-  updateTotal(
-    @Param('id', ParseIntPipe) id: string,
-    @Body() body: { newTotal: number }
-  ) {
-    return this.cartService.updateCartTotal(id, body.newTotal);
-  }
-
-  @Patch(':id/status')
-  @ApiOperation({ summary: 'Changer le statut du panier' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin, Role.user)
-  @HttpCode(HttpStatus.OK)
-  changeStatus(
-    @Param('id', ParseIntPipe) id: string,
-    @Body() body: { status: 'ACTIVE' | 'COMPLETED' | 'ABANDONED' }
-  ) {
-    return this.cartService.changeCartStatus(id, body.status);
-  }
-
-  /** -------------------- SUPPRESSION -------------------- */
-
+  //  supprimer un panier
   @Delete(':id')
   @ApiOperation({ summary: 'Supprimer un panier' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin, Role.user)
-  @HttpCode(HttpStatus.OK)
-  remove(@Param('id', ParseIntPipe) id: string) {
+  remove(@Param('id') id: string) {
     return this.cartService.remove(id);
   }
 
+  //  supprimer tous les produits d'un panier
   @Delete(':id/clear')
-  @ApiOperation({ summary: 'Vider un panier (supprimer tous les éléments)' })
+  @ApiOperation({ summary: 'Supprimer tous les produits d\'un panier' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin, Role.user)
-  @HttpCode(HttpStatus.OK)
-  clearCart(@Param('id', ParseIntPipe) id: string) {
-    return this.cartService.clearCart(id);
+  clearCart(@Param('id') cartId: string) {
+    return this.cartService.clearCart(cartId);
   }
 }

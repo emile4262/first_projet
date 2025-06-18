@@ -1,5 +1,9 @@
 import { IsEnum, IsOptional, IsNumber } from 'class-validator';
-import { CartStatus } from '@prisma/client';
+export enum CartStatus {
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  ABANDONED = 'ABANDONED',
+}
 
 export class UpdateCartDto {
   @IsOptional()

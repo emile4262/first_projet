@@ -1,5 +1,5 @@
 // dto/create-cart.dto.ts
-import { IsNotEmpty, IsString, IsOptional, IsEnum, IsNumber, Min, IsArray  } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsEnum, IsNumber, Min, IsArray, IsInt, IsPositive  } from 'class-validator';
 import { CartStatus } from '@prisma/client';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
@@ -10,13 +10,10 @@ export class CreateCartDto {
   @IsNotEmpty()
   @IsString()
   userId: string;
+  productId: any;
 
   
- @ApiProperty()
-  @IsOptional()
-  @IsArray()
-  productIds?: number[];
-
+ 
 // //   @ApiProperty() 
 // //   @IsOptional()
 // //   @IsEnum(CartStatus)
@@ -28,6 +25,19 @@ export class CreateCartDto {
 //   total?: number = 0;
 //   status: string;
  }
+
+
+export class AddProductDto {
+  @IsNotEmpty()
+  @IsString()
+  productId: string;
+
+  @IsNotEmpty()
+  @IsInt()
+  @IsPositive()
+  quantity: number;
+}
+
 
 // // dto/update-cart.dto.ts
 

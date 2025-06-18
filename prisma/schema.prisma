@@ -22,7 +22,10 @@ model User {
   password  String
   admin     Boolean
   refreshToken String? 
+  otp               String?    
+  otpExpires        DateTime?  
   role      Role      @default(user)
+  lastPasswordResetAt     DateTime? 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  product[]
@@ -151,6 +154,7 @@ enum PaymentStatus {
 model Cart {
   id        String       @id @default(uuid())
   userId    String
+  productId String ?
   status    CartStatus @default(ACTIVE)
   total     Float    @default(0)
   createdAt DateTime @default(now())
