@@ -33,6 +33,9 @@ import { PaymentModule } from './payement/payement.module';
 import { CartModule } from './cart/cart.module';
 import { CartController } from './cart/cart.controller';
 import { CartService } from './cart/cart.service';
+import { DeliveryModule } from './delivery/delivery.module';
+import { DeliveryController } from './delivery/delivery.controller';
+import { DeliveryService } from './delivery/delivery.service';
 
 
 
@@ -52,10 +55,12 @@ import { CartService } from './cart/cart.service';
     OrderModule,
     ReviewModule,
     CartModule,
+    DeliveryModule,
+    DeliveryModule
     
   ],
-  controllers: [AppController, UsersController, ProductController, OrderController,CategoryController, ReviewController, PaymentController, CartController],
-  providers: [AppService, UsersService, ProductService, OrderService, CategoryService,ReviewService, PaymentService, CartService
+  controllers: [AppController, UsersController, ProductController, OrderController,CategoryController, ReviewController, PaymentController, CartController, DeliveryController],
+  providers: [AppService, UsersService, ProductService, OrderService, CategoryService,ReviewService, PaymentService, CartService, DeliveryService
     // {
     //   provide: APP_GUARD,
     //   useClass: AuthGuard('jwt'),
