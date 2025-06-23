@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException,
 import { PrismaService } from 'src/prisma.service';
 import { CreatePayementDto, PayementStatus } from './dto/create-payement.dto';
 import { UpdatePayementDto } from './dto/update-payement.dto';
+import axios from 'axios';
 
 // Constantes
 const DEFAULT_PAGINATION_LIMIT = 50;
@@ -749,6 +750,38 @@ async getAllUserPaymentsSummary(options: PaginationOptions = {}) {
     throw error;
   }
 }
+
+//  Payement avec PayDunya pour Mobile Money
+
+async payWithMobileMoney(amount: number, phone: string, operator: string) {
+    const response = await axios.post('https://app.paydunya.com/api/v1/checkout-invoice/create', {
+      invoice: {
+        total_amount: amount,
+        description: 'Paiement e-commerce',
+      },
+      store: {
+        name: 'Ma boutique',
+      },
+      actions: {
+        cancel_url: 'https://mon-site.com/cancel',
+        callback_url: 'https://mon-backend.com/payment/callback',
+      },
+      custom_data: {
+        client_phone: phone,
+        operator,
+      }
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'PAYDUNYA-MASTER-KEY': 'ta-master-key',
+        'PAYDUNYA-PRIVATE-KEY': 'ta-private-key',
+        'PAYDUNYA-TOKEN': 'ton-token',
+        'PAYDUNYA-MODE': 'test',
+      }
+    });
+
+    return response.data;
+  }
 
 
 }

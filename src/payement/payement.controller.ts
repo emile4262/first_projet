@@ -381,4 +381,24 @@ async getAllPayments(@Request() req) {
   // ) {
   //   // return this.reportsService.getMonthlyReport(year, month);
   // }
+
+  @Post('mobile-money')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.admin)
+  @ApiOperation({ summary: 'Payer avec de l\'argent mobile' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        amount: { type: 'number', description: 'Montant à payer' },
+        phone: { type: 'string', description: 'Numéro de téléphone' },
+        operator: { type: 'string', description: 'Opérateur de téléphonie' },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Paiement mobile effectué avec succès' })
+  @ApiResponse({ status: 400, description: 'Données invalides' })
+  async payMobile(@Body() body: { amount: number; phone: string; operator: string }) {
+    return this.paymentService.payWithMobileMoney(body.amount, body.phone, body.operator);
+  }
 }

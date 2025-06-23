@@ -172,12 +172,6 @@ async findDeliveriesByExactDate(dateString: string): Promise<Delivery[]> {
     await this.prisma.delivery.delete({ where: { id } });
     return { message: 'Livraison supprimée avec succès' };
   }
-}
-function startOfDay(date: Date): any {
-  throw new Error('Function not implemented.');
-}
+  }
 
-function endOfDay(date: Date): any {
-  throw new Error('Function not implemented.');
-}
 
