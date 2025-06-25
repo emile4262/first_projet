@@ -172,6 +172,50 @@ async findDeliveriesByExactDate(dateString: string): Promise<Delivery[]> {
     await this.prisma.delivery.delete({ where: { id } });
     return { message: 'Livraison supprimée avec succès' };
   }
+    // confirmation d'une livraison 
+   
+  async confirmDelivery(id: string): Promise<Delivery> {
+    const delivery = await this.prisma.delivery.findUnique({ where: { id } });
+    if (!delivery) {
+      throw new NotFoundException('Livraison non trouvée');
+    }
+
+    // Vérifie si la livraison est déjà confirmée
+    if (delivery.status === DeliveryStatus.DELIVERED) {
+      throw new BadRequestException('La livraison est déjà confirmée');
+    }
+
+    // Met à jour le statut de la livraison
+    return this.prisma.delivery.update({
+      where: { id },
+      data: {
+        status: DeliveryStatus.DELIVERED,
+        deliveredAt: new Date(), // Met à jour la date de livraison
+      },
+    });
+
   }
+  // Annuler une livraison
+  async cancelDelivery(id: string): Promise<Delivery> {
+    const delivery = await this.prisma.delivery.findUnique({ where: { id } });
+    if (!delivery) {
+      throw new NotFoundException('Livraison non trouvée');
+    }
+
+    // Vérifie si la livraison est déjà annulée
+    if (delivery.status === DeliveryStatus.CANCELED) {
+      throw new BadRequestException('La livraison est déjà annulée');
+    }
+
+    // Met à jour le statut de la livraison
+    return this.prisma.delivery.update({
+      where: { id },
+      data: {
+        status: DeliveryStatus.CANCELED,
+        deliveredAt: null, // Réinitialise la date de livraison
+      },
+    });
+  }
+    }
 
 

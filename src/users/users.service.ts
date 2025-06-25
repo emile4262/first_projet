@@ -311,18 +311,18 @@ export class UsersService {
   }
 
   // ⚠️ Limite de 1 fois par mois pour les utilisateurs non-admin
-  if (user.role !== 'admin' && user.lastPasswordResetAt) {
-    const now = new Date();
-    const nextAllowed = new Date(user.lastPasswordResetAt);
-    nextAllowed.setMonth(nextAllowed.getMonth() + 1);
+  // if (user.role !== 'admin' && user.lastPasswordResetAt) {
+  //   const now = new Date();
+  //   const nextAllowed = new Date(user.lastPasswordResetAt);
+  //   nextAllowed.setMonth(nextAllowed.getMonth() + 1);
 
-    if (now < nextAllowed) {
-      const daysLeft = Math.ceil((nextAllowed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      throw new BadRequestException(
-        `Vous avez déjà réinitialisé votre mot de passe ce mois-ci. Veuillez réessayer dans ${daysLeft} jour(s).`,
-      );
-    }
-  }
+  //   if (now < nextAllowed) {
+  //     const daysLeft = Math.ceil((nextAllowed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  //     throw new BadRequestException(
+  //       `Vous avez déjà réinitialisé votre mot de passe ce mois-ci. Veuillez réessayer dans ${daysLeft} jour(s).`,
+  //     );
+  //   }
+  // }
   // Générer un OTP aléatoire à 6 chiffres
      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     throw new BadRequestException('Configuration de l\'email manquante');

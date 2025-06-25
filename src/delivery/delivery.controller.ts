@@ -81,12 +81,35 @@ export class DeliveryController {
     return this.deliveryService.remove(id);
   }
 
-  @Get('order/:orderId')
-  @UseGuards(JwtAuthGuard, RolesGuard) 
+  // @Get('order/:orderId')
+  // @UseGuards(JwtAuthGuard, RolesGuard) 
+  // @Roles(Role.admin)
+  // @ApiOperation({ summary: 'Get deliveries by order ID' })
+  // async findByOrderId(@Param('orderId', ParseUUIDPipe) orderId: string): Promise<Delivery[]> {
+  //   const deliveries = await this.deliveryService.findAll();
+  //   return deliveries.filter(delivery => delivery.orderId === orderId);
+  // }
+
+  // ✅ Confirmer la livraison
+  @Patch(':id/confirm')
+   @UseGuards(JwtAuthGuard, RolesGuard) 
   @Roles(Role.admin)
-  @ApiOperation({ summary: 'Get deliveries by order ID' })
-  async findByOrderId(@Param('orderId', ParseUUIDPipe) orderId: string): Promise<Delivery[]> {
-    const deliveries = await this.deliveryService.findAll();
-    return deliveries.filter(delivery => delivery.orderId === orderId);
+  @ApiOperation({ summary: 'Confirmer une livraison par ID' })
+  async confirmDelivery(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<Delivery> {
+    return this.deliveryService.confirmDelivery(id);
+  }
+
+  // ❌ Annuler la livraison
+   @Patch(':id/cancel')
+   @UseGuards(JwtAuthGuard, RolesGuard) 
+   @Roles(Role.admin)
+   @ApiOperation({ summary: 'Annuler une livraison par ID' })
+  async cancelDelivery(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<Delivery> {
+    return this.deliveryService.cancelDelivery(id);
   }
 }
+  

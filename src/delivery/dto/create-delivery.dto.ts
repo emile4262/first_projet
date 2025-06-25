@@ -1,5 +1,5 @@
 // create-delivery.dto.ts
-import { IsString, IsOptional, IsDateString, IsEnum, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsEnum, IsNotEmpty, Matches, IsUUID } from 'class-validator';
 import { DeliveryStatus } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -27,11 +27,18 @@ export class CreateDeliveryDto {
   @IsString()
   method?: string; 
 
-  @ApiProperty()
+  
   @IsOptional()
   @IsEnum(DeliveryStatus)
   status?: DeliveryStatus;
 }
+
+export class ConfirmDeliveryDto {
+  @ApiProperty()
+  @IsUUID()
+  id: string;
+}
+
 // export class FindByDateDto {
 //   @ApiProperty()   
 //   @IsNotEmpty({ message: 'La date est requise' })
