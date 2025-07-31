@@ -172,11 +172,11 @@ export class PaymentController {
   //   if (req.user.role !== 'admin') {
   //     throw new BadRequestException('Accès réservé aux administrateurs');
   //   }
-  //   // return {
-  //   //   statusCode: HttpStatus.OK,
-  //   //   message: 'Paiement marqué comme échoué',
-  //   //   data: await this.paymentService.failPayment(id)
-  //   // };
+  //   return {
+  //     statusCode: HttpStatus.OK,
+  //     message: 'Paiement marqué comme échoué',
+  //     data: await this.paymentService.failPayment(id)
+  //   };
   // }
 
   // REMBOURSEMENTS

@@ -216,7 +216,6 @@ export class UsersService {
           expiresIn: '2d',
         }
       );
-
       // Sauvegarder le refresh token en base
       await this.prisma.user.update({
         where: { id: user.id },
@@ -394,7 +393,7 @@ export class UsersService {
               <tr>
                 <td style="padding-top: 30px; font-size: 14px; color: #555555;">
                   Merci,<br/>
-                  <p> L'équipe Ecommerce </p>
+                  <p> L'équipe Ecommerce Merci </p>
                 </td>
               </tr>
             </table>
