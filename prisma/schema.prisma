@@ -117,38 +117,27 @@ model Review {
 }
 
 model Payment {
-  id            String        @id @default(uuid())
-  amount        Float         
-  status        PaymentStatus @default(PENDING)
-  paymentMethod String?       
-  reference     String?       @unique 
-  description   String?
-  // metadata      Json?         
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  orderId String
+  id        String           @id @default(cuid())
+  orderId    String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  // Relations pour les remboursements
-  refunds       Payment[] @relation("PaymentRefunds")
-  originalPayment Payment? @relation("PaymentRefunds", fields: [originalPaymentId], references: [id])
-  originalPaymentId String?
-
-
-  @@map("payments")
+  amount    Float
+  method    PaymentMethod
+  status    PaymentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
 }
 
+enum PaymentMethod {
+  CASH
+  WAVE
+  ORANGE
+  MTN
+  MOOV
+}
 
-
-// Enums
 enum PaymentStatus {
   PENDING
-  COMPLETED
+  SUCCESS
   FAILED
-  CANCELLED
-  REFUNDED
-  PARTIAL_REFUND
 }
 
 

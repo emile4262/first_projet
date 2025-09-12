@@ -1,11 +1,13 @@
-import { IsEnum, IsOptional } from 'class-validator';
-import { PayementStatus } from './create-payement.dto';
+// import { IsEnum, IsOptional } from 'class-validator';
 
-export class UpdatePayementDto {
-  @IsOptional()
-  amount?: number;
+// export enum PaymentStatus {
+//   PENDING = 'PENDING',
+//   SUCCESS = 'SUCCESS',
+//   FAILED = 'FAILED',
+// }
 
-  @IsOptional()
-  @IsEnum(PayementStatus)
-  status?: PayementStatus;
-}
+// export class UpdatePaymentDto {
+//   @IsOptional()
+//   @IsEnum(PaymentStatus)
+//   status?: PaymentStatus;
+// }

@@ -66,11 +66,11 @@ export class UsersService {
     });
   }
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'role'>> {
-    return this.createUser(createUserDto);
-  }
+  // async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'role'>> {
+  //   return this.createUser(createUserDto);
+  // }
 
-  async createUser(createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'role'>> {
+  async createUser(createUserDto: CreateUserDto): Promise<User>{
     const { email, password, firstName, lastName } = createUserDto;
 
     const existingUser = await this.prisma.user.findUnique({
@@ -95,8 +95,8 @@ export class UsersService {
         createdAt: new Date(),
       },
     });
+    return user;
 
-    return this.excludeSensitiveFields(user);
   }
 // obténir tous les utilisateurs
   async findAll(): Promise<Partial<User>[]> {

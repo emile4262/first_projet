@@ -10,6 +10,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags,} from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
+import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
 
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -89,6 +90,8 @@ export class ProductController {
   }
 
    @Get()
+   @UseInterceptors(new ExcludeFieldsInterceptor(['stockInitial']))
+
 findAll() {
   return this.productService.findAll(); // retourne juste les produits
 }

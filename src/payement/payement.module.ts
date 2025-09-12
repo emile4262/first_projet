@@ -1,12 +1,12 @@
-import { Module } from '@nestjs/common';
-import { AuthModule } from 'src/auth/auth.module';
-import { PrismaModule } from 'src/prisma.module';
-import { PaymentController } from './payement.controller';
-import { PaymentService } from './payement.service';
+// import { Module } from '@nestjs/common';
+// import { AuthModule } from 'src/auth/auth.module';
+// import { PrismaModule } from 'src/prisma.module';
+// import { PaymentsService } from './payement.service';
+// import { PaymentsController } from './payement.controller';
 
-@Module({
-  imports: [PrismaModule,AuthModule],
-  controllers: [PaymentController],
-  providers: [PaymentService],
-})
-export class PaymentModule {}
+// @Module({
+//   imports: [PrismaModule,AuthModule],
+//   controllers: [PaymentsController],
+//   providers: [PaymentsService],
+// })
+// export class PaymentModule {}

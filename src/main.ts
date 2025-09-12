@@ -7,15 +7,31 @@ import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express/interfaces';
 import { RolesGuard } from './auth/roles.guard';
-
+import { Logger } from '@nestjs/common';
 async function bootstrap() {
 
-
+  const logger = new Logger('HTTP');
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
+//  une alternative pour logger les requetes http
+  app.use((req, res, next) => { 
+    const start = Date.now(); 
+  
+    res.on('finish', () => { 
+      logger.log(
+       `method: ${req.method},
+        url: ${req.originalUrl}, 
+        status: ${res.statusCode},
+        responseTime: ${Date.now() - start}ms`
+      ); 
+    }); 
+  
+    next(); 
+  }); 
+
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('The API description')
@@ -23,9 +39,12 @@ async function bootstrap() {
     .addTag('api')
     .addBearerAuth()
     .build();
-    app.enableCors({
-      origin: '*', 
-    });
+
+    // Pour autoriser les requêtes cross-origin (CORS)
+  app.enableCors({
+    origin: '*', 
+  });
+  
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   const port = process.env.PORT ?? 5000;

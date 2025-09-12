@@ -9,6 +9,7 @@ import {
   BadRequestException,
   UseGuards,
   Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
@@ -18,6 +19,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
+import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
 
 @ApiTags('users')
 @Controller('users')
@@ -26,9 +28,10 @@ export class UsersController {
    
   // Création d'utilisateur - PUBLIC 
   @Post('create')
+  @UseInterceptors(new ExcludeFieldsInterceptor(['password', 'role']))
   @ApiOperation({ summary: 'Créer un utilisateur' })
   create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+    return this.usersService.createUser(createUserDto);
   }
 
   // Connexion - PUBLIC
@@ -41,6 +44,7 @@ export class UsersController {
 
   // Récupérer tous les utilisateurs - ADMIN SEULEMENT
   @Get()
+  @UseInterceptors(new ExcludeFieldsInterceptor(['password', 'role']))
   @UseGuards(JwtAuthGuard, RolesGuard) 
   @Roles(Role.admin)
   @ApiBearerAuth()
