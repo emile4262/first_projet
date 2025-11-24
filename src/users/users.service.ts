@@ -23,26 +23,26 @@ export class UsersService {
   ) {}
 
   // Méthode pour exclure le mot de passe et le rôle
-  private excludeSensitiveFields(user: User): Omit<User, 'password' | 'role'> {
-    const { password, role, ...safeUser } = user;
-    return safeUser;
-  }
+  // private excludeSensitiveFields(user: User): Omit<User, 'password' | 'role'> {
+  //   const { password, role, ...safeUser } = user;
+  //   return safeUser;
+  // }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
-  }
+  // async findByEmail(email: string): Promise<User | null> {
+  //   return this.prisma.user.findUnique({
+  //     where: { email },
+  //   });
+  // }
 
-  async verifyUser(email: string, password: string): Promise<User | null> {
-    const user = await this.findByEmail(email);
-    if (!user) {
-      return null;
-    }
+  // async verifyUser(email: string, password: string): Promise<User | null> {
+  //   const user = await this.findByEmail(email);
+  //   if (!user) {
+  //     return null;
+  //   }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    return isPasswordValid ? user : null;
-  }
+  //   const isPasswordValid = await bcrypt.compare(password, user.password);
+  //   return isPasswordValid ? user : null;
+  // }
 
   async updateUserRole(userId: string, newRole: 'admin' | 'user'): Promise<User> {
     const user = await this.prisma.user.findUnique({

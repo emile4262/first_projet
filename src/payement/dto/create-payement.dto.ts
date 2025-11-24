@@ -1,22 +1,30 @@
-// import { IsEnum, IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
 
-// export enum PaymentStatus {
-//   CASH = 'CASH',
-//   WAVE = 'WAVE',
-//   ORANGE = 'ORANGE',
-//   MTN = 'MTN',
-//   MOOV = 'MOOV',
-// }
+export enum PaymentStatus {
+  CASH = 'CASH',
+  WAVE = 'WAVE',
+  ORANGE = 'ORANGE',
+  MTN = 'MTN',
+  MOOV = 'MOOV',
+}
 
-// export class CreatePaymentDto {
-//   @IsNumber()
-//   @IsPositive()
-//   orderId: number;
+export enum PaymentMethod {
+  CASH = 'CASH',
+  WAVE = 'WAVE',
+  ORANGE = 'ORANGE',
+  MTN = 'MTN',
+  MOOV = 'MOOV',
+}
 
-//   @IsNumber()
-//   @IsPositive()
-//   amount: number;
+export class CreatePaymentDto {
+  @IsNumber()
+  @IsPositive()
+  orderId: string;
 
-//   @IsEnum(PaymentMethod)
-//   method: PaymentMethod;
-// }
+  @IsNumber()
+  @IsPositive()
+  amount: number;
+
+  @IsEnum(PaymentMethod)
+  method: PaymentMethod;
+}

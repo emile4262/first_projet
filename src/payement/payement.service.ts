@@ -1,93 +1,65 @@
-// import { Injectable, NotFoundException } from '@nestjs/common';
-// import axios from 'axios';
-// import { CreatePaymentDto, PaymentMethod } from './dto/create-payement.dto';
-// import { PaymentStatus } from './dto/update-payement.dto';
-// import { PrismaService } from 'src/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import axios from 'axios';
+import { CreatePaymentDto, PaymentMethod } from './dto/create-payement.dto';
+import { PaymentStatus } from './dto/update-payement.dto';
+import { PrismaService } from 'src/prisma.service';
 
-// @Injectable()
-// export class PaymentsService {
-//   constructor(private prisma: PrismaService) {}
+@Injectable()
+export class PaymentsService {
+  constructor(private prisma: PrismaService) {}
 
-//   async create(dto: CreatePaymentDto) {
-//     // Vérifier que la vente existe
-//     const order = await this.prisma.order.findUnique({
-//       where: { id: dto.orderId },
-//       include: { payments: true },
-//     });
-//     if (!order) throw new NotFoundException('order not found');
+//    création d'un payement
+  async create(dto: CreatePaymentDto) {
+    const payment = await this.prisma.payment.create({
+      data: {
+        amount: dto.amount,
+        status: PaymentStatus.PENDING,
+        orderId: dto.orderId,
+      },
+    });
+    }
 
-//     // CAS 1 : Paiement cash -> succès immédiat
-//     if (dto.method === PaymentMethod.CASH) {
-//       return this.prisma.payment.create({
-//         data: {
-//           orderId: dto.orderId,
-//           amount: dto.amount,
-//           method: dto.method,
-//           status: PaymentStatus.SUCCESS,
-//         },
-//       });
-//     }
+    //   appel au service de paiement externe
+    async processPayment(payment: any, method: PaymentMethod) {
+      try {
+        const response = await axios.post('https://api.externalpayment.com/pay', {
+            transaction_id: payment.id,
+            amount: payment.amount,
+            method: method,
+        });
+        return response.data;
+      } catch (error) {
+        throw new Error('Payment processing failed');
+      }
+    }
 
-//     // CAS 2 : Paiement Mobile Money via CinetPay
-//     const transactionId = `sale-${dto.orderId}-${Date.now()}`;
+    // // gestion des webhooks
+    // async handleWebhook(transactionId: string, status: string) {
+    //   const payment = await this.prisma.payment.findUnique({
+    //     where: { id: transactionId },
+    //   });
+    //   if (!payment) {
+    //     throw new NotFoundException('Payment not found');
+    //   }
+    //     await this.prisma.payment.update({
+    //     where: { id: transactionId },
+    //     data: { status: status }
+    //      });
+    // }
+    // récupération des payements par commande
+    async findByOrder(orderId: number) {
+      return this.prisma.payment.findMany({
+        where: { orderId: orderId.toString() },
+      });
+    }
 
-//     const response = await axios.post('https://api-checkout.cinetpay.com/v2/payment', {
-//       apikey: process.env.CINETPAY_API_KEY,
-//       site_id: process.env.CINETPAY_SITE_ID,
-//       transaction_id: transactionId,
-//       amount: dto.amount,
-//       currency: 'XOF',
-//       description: `Paiement de la vente ${dto.orderId}`,
-//       return_url: process.env.CINETPAY_RETURN_URL,
-//       notify_url: process.env.CINETPAY_NOTIFY_URL,
-//     });
+    // récupération du solde d'une commande
+    async getOrderBalance(orderId: number) {
+      const payments = await this.prisma.payment.findMany({
+        where: { orderId: orderId.toString(), status: PaymentStatus.COMPLETED },
+      });
+      return payments.reduce((sum, payment) => sum + payment.amount, 0);
+    }
 
-//     // Créer un paiement en attente
-//     return this.prisma.payment.create({
-//       data: {
-//         orderId: dto.orderId,
-//         amount: dto.amount,
-//         method: dto.method,
-//         status: PaymentStatus.PENDING,
-//       },
-//     });
-//   }
-
-//   // Callback CinetPay pour confirmer le paiement
-//   async handleWebhook(transactionId: string, status: string) {
-//     const payment = await this.prisma.payment.findFirst({
-//       where: { },
-//       orderBy: { createdAt: 'desc' }, // dernier paiement
-//     });
-
-//     if (!payment) throw new NotFoundException('Payment not found');
-
-//     return this.prisma.payment.update({
-//       where: { id: payment.id },
-//       data: {
-//         status: status === 'ACCEPTED' ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
-//       },
-//     });
-//   }
-
-//   // Récupérer les paiements d'une vente
-//   async findByOrder(orderId: number) {
-//     return this.prisma.payment.findMany({ where: { orderId } });
-//   }
-
-//   // Calculer le solde restant
-//   async getOrderBalance(orderId: number) {
-//     const order = await this.prisma.order.findUnique({
-//       where: { id: orderId },
-//       include: { payments: true },
-//     });
-//     if (!order) throw new NotFoundException('order not found');
-
-//     const totalPaid = order.payments.reduce((sum, p) => sum + p.amount, 0);
-//     return {
-//       totalAmount: order.totalAmount,
-//       totalPaid,
-//       balance: order.totalAmount - totalPaid,
-//     };
-//   }
-// }
+      
+     }

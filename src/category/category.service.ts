@@ -38,13 +38,13 @@ export class CategoryService {
       include: { product: true },
     });
   }
-  async findAllWithProducts(): Promise<any[]> {
-    return this.prisma.category.findMany({
-      include: {
-        product: true,
-      },
-    });
-  }
+  // async findAllWithProducts(): Promise<any[]> {
+  //   return this.prisma.category.findMany({
+  //     include: {
+  //       product: true,
+  //     },
+  //   });
+  // }
 
   // obtention d'une categorie par son id
   async findOne(id: string) {
