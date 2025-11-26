@@ -1,8 +1,11 @@
-import {Injectable,ForbiddenException,NotFoundException,  BadRequestException,} from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException, } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateReviewDto } from './dto/create-reviews.dto';
 import { UpdateReviewDto } from './dto/update-reviews.dto';
 import { Review } from './entities/reviews.entity';
+import { PageOptionsDto } from '../common/dto/page-options.dto';
+import { PageDto } from '../common/dto/page.dto';
+import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 @Injectable()
 export class ReviewService {
@@ -15,9 +18,9 @@ export class ReviewService {
   findAllByReview(reviewId: string) {
     throw new Error('Method not implemented.');
   }
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
-  
+
   // Créer un avis
   async create(data: CreateReviewDto): Promise<Review> {
     // Vérifie si l'utilisateur a acheté ce produit
@@ -66,24 +69,38 @@ export class ReviewService {
     });
 
     return review;
-    
+
   }
   // obtient tous les avis
 
-  async findAll() {
-    return this.prisma.review.findMany();
+  // obtient tous les avis avec pagination
+  async findAll(pageOptionsDto: PageOptionsDto): Promise<PageDto<Review>> {
+    const queryBuilder = {
+      skip: pageOptionsDto.skip,
+      take: pageOptionsDto.take,
+      orderBy: {
+        createdAt: pageOptionsDto.order,
+      },
+    };
+
+    const itemCount = await this.prisma.review.count();
+    const { entities } = await this.prisma.review.findMany(queryBuilder).then((entities) => ({ entities }));
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
+
+    return new PageDto(entities, pageMetaDto);
   }
 
   // obtenir un avis par son id
-  async findOne( id: string ) {
+  async findOne(id: string) {
     // Vérifie si l'avis existe
 
     if (!id) {
       throw new NotFoundException("L'avis avec cet ID n'existe pas");
     }
     // Récupérer l'avis par son ID
-  const review = await this.prisma.review.findUnique({
-      where:{id: id},
+    const review = await this.prisma.review.findUnique({
+      where: { id: id },
       select: {
         id: true,
         rating: true,
@@ -104,15 +121,15 @@ export class ReviewService {
         },
       },
     })
-    
+
     if (!review) {
       throw new NotFoundException("l'avis avec cet ID ${id} n'existe pas");
     }
     return review;
   }
-     
-          
-  
+
+
+
 
 
   // Récupérer un avis par son ID
@@ -142,4 +159,4 @@ export class ReviewService {
 
     return this.prisma.review.delete({ where: { id } });
   }
- }
+}

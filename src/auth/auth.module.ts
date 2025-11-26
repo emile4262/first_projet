@@ -24,9 +24,8 @@ import { CartController } from 'src/cart/cart.controller';
     }),
   ],
   controllers:[ProductController, UsersController],
-  providers: [JwtStrategy ],
+  providers: [JwtStrategy],
    exports: [JwtModule],
 })
 export class AuthModule {}
 
-//export { AuthGuard };

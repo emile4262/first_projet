@@ -12,6 +12,9 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { randomInt } from 'crypto';
 import * as nodemailer from 'nodemailer';
+import { PageOptionsDto } from '../common/dto/page-options.dto';
+import { PageDto } from '../common/dto/page.dto';
+import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 
 
@@ -20,7 +23,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService
-  ) {}
+  ) { }
 
   // Méthode pour exclure le mot de passe et le rôle
   // private excludeSensitiveFields(user: User): Omit<User, 'password' | 'role'> {
@@ -70,7 +73,7 @@ export class UsersService {
   //   return this.createUser(createUserDto);
   // }
 
-  async createUser(createUserDto: CreateUserDto): Promise<User>{
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { email, password, firstName, lastName } = createUserDto;
 
     const existingUser = await this.prisma.user.findUnique({
@@ -98,20 +101,32 @@ export class UsersService {
     return user;
 
   }
-// obténir tous les utilisateurs
-  async findAll(): Promise<Partial<User>[]> {
-    return this.prisma.user.findMany({
+  // obténir tous les utilisateurs avec pagination
+  async findAll(pageOptionsDto: PageOptionsDto): Promise<PageDto<Partial<User>>> {
+    const queryBuilder = {
+      skip: (pageOptionsDto.page - 1) * pageOptionsDto.take,
+      take: pageOptionsDto.take,
+      orderBy: {
+        createdAt: pageOptionsDto.order,
+      },
       select: {
         id: true,
         firstName: true,
         lastName: true,
         email: true,
-        role: true, 
+        role: true,
         admin: true,
         createdAt: true,
         updatedAt: true,
       },
-    });
+    };
+
+    const itemCount = await this.prisma.user.count();
+    const { entities } = await this.prisma.user.findMany(queryBuilder).then((entities) => ({ entities }));
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
+
+    return new PageDto(entities, pageMetaDto);
   }
 
   //  obténir un utilisateur pas sont id
@@ -163,7 +178,7 @@ export class UsersService {
       data: updateData,
     });
   }
-//  supprimer un utlisateur
+  //  supprimer un utlisateur
   async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.prisma.user.delete({ where: { id } });
@@ -232,7 +247,7 @@ export class UsersService {
         message: 'Connexion réussie',
         access_token,
         refresh_token,
-        
+
       };
     } catch (error) {
       return {
@@ -302,51 +317,51 @@ export class UsersService {
   }
 
   // Méthode pour rétrograder un admin en utilisateur normal
- async sendOtp(dto: ResetPasswordDto) {
-{}  const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+  async sendOtp(dto: ResetPasswordDto) {
+    { } const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
 
-  if (!user) {
-    throw new NotFoundException('Utilisateur introuvable');
-  }
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
 
-  // ⚠️ Limite de 1 fois par mois pour les utilisateurs non-admin
-  // if (user.role !== 'admin' && user.lastPasswordResetAt) {
-  //   const now = new Date();
-  //   const nextAllowed = new Date(user.lastPasswordResetAt);
-  //   nextAllowed.setMonth(nextAllowed.getMonth() + 1);
+    // ⚠️ Limite de 1 fois par mois pour les utilisateurs non-admin
+    // if (user.role !== 'admin' && user.lastPasswordResetAt) {
+    //   const now = new Date();
+    //   const nextAllowed = new Date(user.lastPasswordResetAt);
+    //   nextAllowed.setMonth(nextAllowed.getMonth() + 1);
 
-  //   if (now < nextAllowed) {
-  //     const daysLeft = Math.ceil((nextAllowed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  //     throw new BadRequestException(
-  //       `Vous avez déjà réinitialisé votre mot de passe ce mois-ci. Veuillez réessayer dans ${daysLeft} jour(s).`,
-  //     );
-  //   }
-  // }
-  // Générer un OTP aléatoire à 6 chiffres
-     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new BadRequestException('Configuration de l\'email manquante');
-  }
-  const otp = randomInt(100000, 999999).toString();
-  const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // expire dans 10 minutes
+    //   if (now < nextAllowed) {
+    //     const daysLeft = Math.ceil((nextAllowed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    //     throw new BadRequestException(
+    //       `Vous avez déjà réinitialisé votre mot de passe ce mois-ci. Veuillez réessayer dans ${daysLeft} jour(s).`,
+    //     );
+    //   }
+    // }
+    // Générer un OTP aléatoire à 6 chiffres
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      throw new BadRequestException('Configuration de l\'email manquante');
+    }
+    const otp = randomInt(100000, 999999).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // expire dans 10 minutes
 
-  await this.prisma.user.update({  
-    where: { email: dto.email },
-    data: {
-      otp,
-      otpExpires,
-      lastPasswordResetAt: user.role !== 'admin' ? new Date() : user.lastPasswordResetAt, // mise à jour uniquement si non admin
-    },
-  });
+    await this.prisma.user.update({
+      where: { email: dto.email },
+      data: {
+        otp,
+        otpExpires,
+        lastPasswordResetAt: user.role !== 'admin' ? new Date() : user.lastPasswordResetAt, // mise à jour uniquement si non admin
+      },
+    });
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  }); 
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
-  const htmlContent = `
+    const htmlContent = `
     <!DOCTYPE html>
     <html lang="fr">
     <head>
@@ -404,30 +419,30 @@ export class UsersService {
     </html>
   `;
 
-  const mailOptions = {
-    from: `"Support Ecommerce" <${process.env.EMAIL_USER}>`,
-    to: dto.email,
-    subject: 'Réinitialisation de mot de passe - Code OTP',
-    html: htmlContent,
-  };
+    const mailOptions = {
+      from: `"Support Ecommerce" <${process.env.EMAIL_USER}>`,
+      to: dto.email,
+      subject: 'Réinitialisation de mot de passe - Code OTP',
+      html: htmlContent,
+    };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Email OTP envoyé à ${dto.email}`);
-  } catch (error) {
-    console.error("Erreur lors de l'envoi de l'email :", error);
-    throw new BadRequestException("Impossible d'envoyer l'OTP par e-mail");
+    try {
+      await transporter.sendMail(mailOptions);
+      // console.log(`Email OTP envoyé à ${dto.email}`);
+    } catch (error) {
+      // console.error("Erreur lors de l'envoi de l'email :", error);
+      throw new BadRequestException("Impossible d'envoyer l'OTP par e-mail");
+    }
+
+    return {
+      message: 'OTP envoyé à votre email',
+    };
   }
 
-  return {
-    message: 'OTP envoyé à votre email', 
-  };  
-}
- 
   /**
    * Réinitialise le mot de passe avec l'OTP
    */
-   async resetPasswordWithOtp(dto: VerifyOtpDto) {
+  async resetPasswordWithOtp(dto: VerifyOtpDto) {
     // Nettoyer les données d'entrée
     const email = dto.email.trim().toLowerCase();
     const otp = dto.otp.trim();
@@ -451,12 +466,12 @@ export class UsersService {
       throw new BadRequestException('OTP expiré');
     }
 
-   // Comparaison plus robuste de l'OTP
+    // Comparaison plus robuste de l'OTP
     if (user.otp.trim() !== otp) {
       throw new BadRequestException(`OTP invalide - Reçu: "${otp}", Attendu: "${user.otp}"`);
-    }    
+    }
 
-    
+
     // Valider le nouveau mot de passe (ajoutez vos règles de validation)
     if (!dto.newPassword || dto.newPassword.length < 8) {
       throw new BadRequestException('Le mot de passe doit contenir au moins 8 caractères');
@@ -469,22 +484,22 @@ export class UsersService {
       // Mettre à jour le mot de passe et supprimer l'OTP
       await this.prisma.user.update({
         where: { email: dto.email },
-        data: { 
+        data: {
           password: hashedPassword,
           otp: null, // Supprimer l'OTP utilisé
           otpExpires: null, // Supprimer la date d'expiration
           updatedAt: new Date() // Mettre à jour la date de modification
         },
       });
-      console.log('Mot de passe réinitialisé avec succès pour:', email);
+      // console.log('Mot de passe réinitialisé avec succès pour:', email);
 
 
-      return { 
-        message: 'Mot de passe réinitialisé avec succès' 
+      return {
+        message: 'Mot de passe réinitialisé avec succès'
       };
 
     } catch (error) {
-      console.error('Erreur lors de la réinitialisation:', error);
+      // console.error('Erreur lors de la réinitialisation:', error);
       throw new BadRequestException('Erreur lors de la réinitialisation du mot de passe');
     }
   }
@@ -502,8 +517,8 @@ export class UsersService {
         otpExpires: null
       }
     });
-    
-    console.log(`${result.count} OTP expirés nettoyés`);
+
+    // console.log(`${result.count} OTP expirés nettoyés`);
     return result;
   }
 
@@ -513,10 +528,10 @@ export class UsersService {
   async checkOtpStatus(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      select: { 
-        email: true, 
-        otp: true, 
-        otpExpires: true 
+      select: {
+        email: true,
+        otp: true,
+        otpExpires: true
       }
     });
 
@@ -534,5 +549,5 @@ export class UsersService {
     };
   }
 
-   }
+}
 

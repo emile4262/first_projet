@@ -1,20 +1,20 @@
-import { Controller, Post, Get, Param, Body, Delete, UseGuards, Patch, Req, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { OrderService, OrderStatus } from './order.service';
+import { Controller, Post, Get, Param, Body, Delete, UseGuards, Patch, Query, BadRequestException } from '@nestjs/common';
+import { OrderService } from './order.service';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order.dto';
-import { Request } from 'express';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Order } from '@prisma/client';
+import { PageOptionsDto } from '../common/dto/page-options.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('order')
 @ApiBearerAuth()
 @Controller('order')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderService: OrderService) { }
 
   @ApiOperation({ summary: 'Créer un order' })
   @Post()
@@ -25,8 +25,8 @@ export class OrderController {
   @ApiOperation({ summary: 'Obtenir tous les orders' })
   @Get()
   @Roles(Role.admin)
-  findAll() {
-    return this.orderService.getAllOrders();
+  findAll(@Query() pageOptionsDto: PageOptionsDto) {
+    return this.orderService.getAllOrders(pageOptionsDto);
   }
 
   @ApiOperation({ summary: 'Obtenir un order par ID' })
@@ -51,21 +51,11 @@ export class OrderController {
   async updateOrderStatus(
     @Param('id') id: string,
     @Body() dto: UpdateOrderStatusDto,
-   ): Promise<Order> {
+  ): Promise<Order> {
     if (!dto.status) {
       throw new BadRequestException('Le statut est requis');
     }
 
-    // ✅ Laissez le service gérer toute la logique métier
     return this.orderService.updateOrderStatus(id, dto.status, dto);
   }
-
-  // ✅ Supprimez cette méthode en doublon ou renommez-la si elle a un but différent
-  // @Patch(':id/delivery-status')
-  // updateDeliveryStatus(
-  //   @Param('id') id: string,
-  //   @Body() updateDto: UpdateOrderStatusDto,
-  // ): Promise<Order> {
-  //   return this.orderService.updateOrderStatus(id, updateDto.status, updateDto);
-  // }
 }

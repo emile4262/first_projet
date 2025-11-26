@@ -1,24 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Res, HttpStatus, Query} from '@nestjs/common';
-// import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Query } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags,} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
-
+import { PageOptionsDto } from '../common/dto/page-options.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('products')
 @ApiBearerAuth()
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productService: ProductService) { }
 
   @ApiOperation({ summary: "Uploader une image et l'associer à un produit" })
   @ApiConsumes('multipart/form-data')
@@ -49,13 +48,13 @@ export class ProductController {
         },
       }),
       fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        if (!file.mimetype.match(/^image\/(jpg|jpeg|png|gif)$/)) {
           return callback(new BadRequestException('Seules les images sont autorisées!'), false);
         }
         callback(null, true);
       },
       limits: {
-        fileSize: 1024 * 1024 * 5, 
+        fileSize: 1024 * 1024 * 5,
       },
     }),
   )
@@ -66,18 +65,18 @@ export class ProductController {
     if (!file) {
       throw new BadRequestException('Fichier non fourni');
     }
-    
+
     const imageUrl = `/uploads/products/${file.filename}`;
-    
+
     await this.productService.updateProductImage(productId, imageUrl);
-    
+
     return {
       url: imageUrl,
       filename: file.filename,
       productId: productId
     };
   }
-  
+
   @ApiOperation({ summary: 'Créer un nouveau produit' })
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 201, description: 'Produit créé avec succès' })
@@ -86,24 +85,21 @@ export class ProductController {
   @Roles(Role.admin)
   @ApiBearerAuth()
   create(@Body() createProductDto: CreateProductDto) {
-  return this.productService.create(createProductDto);
+    return this.productService.create(createProductDto);
   }
 
-   @Get()
-   @UseInterceptors(new ExcludeFieldsInterceptor(['stockInitial']))
+  @Get()
+  @UseInterceptors(new ExcludeFieldsInterceptor(['stockInitial']))
+  findAll(@Query() pageOptionsDto: PageOptionsDto) {
+    return this.productService.findAll(pageOptionsDto);
+  }
 
-findAll() {
-  return this.productService.findAll(); // retourne juste les produits
-}
+  @Get('with-category')
+  findAllWithCategory() {
+    return this.productService.findAllWithCategory();
+  }
 
-@Get('with-category')
-findAllWithCategory() {
-  return this.productService.findAllWithCategory(); 
-}
-
-
-  // Route: GET /products/search?search=xxx
-   @ApiOperation({ summary: 'Rechercher les products' })
+  @ApiOperation({ summary: 'Rechercher les products' })
   @ApiParam({ name: 'recherche', description: 'rechercher un product' })
   @ApiResponse({ status: 200, description: 'Produit récupéré avec succès' })
   @ApiResponse({ status: 404, description: 'Produit non trouvé' })
@@ -128,7 +124,6 @@ findAllWithCategory() {
   findOne(@Param('id') id: string) {
     return this.productService.findOne(id);
   }
-  
 
   @ApiOperation({ summary: 'Supprimer un produit par son ID' })
   @ApiParam({ name: 'id', description: 'ID du produit' })
@@ -136,7 +131,7 @@ findAllWithCategory() {
   @ApiResponse({ status: 404, description: 'Produit non trouvé' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth() 
+  @ApiBearerAuth()
   @Delete(':id')
   @Roles(Role.admin)
   remove(@Param('id') id: string) {

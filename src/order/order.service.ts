@@ -3,6 +3,9 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from '@prisma/client';
 import { UpdateOrderStatusDto } from './dto/update-order.dto';
+import { PageOptionsDto } from '../common/dto/page-options.dto';
+import { PageDto } from '../common/dto/page.dto';
+import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
@@ -12,72 +15,76 @@ export enum OrderStatus {
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // Créer une commande
   async create(data: CreateOrderDto): Promise<Order> {
-    const product = await this.prisma.product.findUnique({
-      where: { id: data.productId },
-      select: {
-        price: true,
-        stockInitial: true,
-        stockFinal: true,
-        Is_available: true,
-      },
-    });
-
-    if (!product) {
-      throw new NotFoundException('Produit non trouvé');
-    }
-
-    if (!product.Is_available) {
-      throw new BadRequestException('Produit non disponible');
-    }
-
-    if (data.quantity <= 0) {
-      throw new BadRequestException('La quantité demandée doit être supérieure à zéro');
-    }
-
-    if (product.stockFinal <= 0) {
-      throw new BadRequestException('Le produit n\'a plus de stock disponible');
-    }
-
-    if (data.quantity > product.stockFinal) {
-      throw new BadRequestException('Quantité demandée supérieure au stock disponible');
-    }
-
     return await this.prisma.$transaction(async (tx) => {
+      // 1. Récupérer le produit avec verrouillage (si possible, sinon simple lecture)
+      // Note: Prisma ne supporte pas nativement le "SELECT FOR UPDATE" facilement sans raw query,
+      // mais on peut vérifier le stock dans la transaction.
+      const product = await tx.product.findUnique({
+        where: { id: data.productId },
+      });
+
+      if (!product) {
+        throw new NotFoundException('Produit non trouvé');
+      }
+
+      if (!product.Is_available) {
+        throw new BadRequestException('Produit non disponible à la vente');
+      }
+
+      if (product.stockFinal < data.quantity) {
+        throw new BadRequestException(`Stock insuffisant. Disponible: ${product.stockFinal}`);
+      }
+
+      // 2. Décrémenter le stock
       await tx.product.update({
         where: { id: data.productId },
         data: {
-          stockFinal: product.stockFinal - data.quantity,
+          stockFinal: {
+            decrement: data.quantity,
+          },
         },
       });
 
-      const price = product.price;
-      const total = price * data.quantity;
+      // 3. Créer la commande
+      const total = product.price * data.quantity;
 
       return tx.order.create({
         data: {
           productId: data.productId,
-          quantity: data.quantity,
-          price,
-          total,
-          status: OrderStatus.PENDING,
           userId: data.userId,
+          quantity: data.quantity,
+          price: product.price,
+          total: total,
+          status: OrderStatus.PENDING,
         },
       });
     });
   }
 
-  // obtenir tous les orders
-  async getAllOrders() {
-    return this.prisma.order.findMany({
+  // obtenir tous les orders avec pagination
+  async getAllOrders(pageOptionsDto: PageOptionsDto): Promise<PageDto<Order>> {
+    const queryBuilder = {
+      orderBy: {
+        createdAt: pageOptionsDto.order,
+      },
+      skip: pageOptionsDto.skip,
+      take: pageOptionsDto.take,
       include: {
         products: true,
         user: true,
       },
-    });
+    };
+
+    const itemCount = await this.prisma.order.count();
+    const { entities } = await this.prisma.order.findMany(queryBuilder).then((entities) => ({ entities }));
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
+
+    return new PageDto(entities, pageMetaDto);
   }
 
   // Obtenir un order par ID
@@ -86,7 +93,7 @@ export class OrderService {
       where: { id },
       include: {
         user: true,
-        
+
       },
     });
 

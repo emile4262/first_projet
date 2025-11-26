@@ -2,14 +2,16 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from 'src/prisma.service';
-import { product } from '@prisma/client'; // Utilisation du nom en minuscule
+import { product } from '@prisma/client';
+import { PageOptionsDto } from '../common/dto/page-options.dto';
+import { PageDto } from '../common/dto/page.dto';
+import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(data: CreateProductDto): Promise<product> {
-    // Vérifier si la catégorie existe
     const category = await this.prisma.category.findUnique({
       where: { id: data.categoryId },
     });
@@ -18,12 +20,10 @@ export class ProductService {
       throw new NotFoundException(`Catégorie avec l'ID ${data.categoryId} non trouvée`);
     }
 
-    // Vérifier si le stock initial est valide
     if (data.stockInitial <= 0) {
       throw new BadRequestException('Le produit doit avoir un stock initial supérieur à 0');
     }
 
-    // Créer le produit avec stockInitial et stockFinal
     const product = await this.prisma.product.create({
       data: {
         name: data.name,
@@ -43,10 +43,22 @@ export class ProductService {
     return product;
   }
 
+  // Tous les produits avec pagination
+  async findAll(pageOptionsDto: PageOptionsDto): Promise<PageDto<product>> {
+    const queryBuilder = {
+      skip: pageOptionsDto.skip,
+      take: pageOptionsDto.take,
+      orderBy: {
+        createdAt: pageOptionsDto.order,
+      },
+    };
 
- // Tous les produits
- async findAll() {
-    return this.prisma.product.findMany();
+    const itemCount = await this.prisma.product.count();
+    const { entities } = await this.prisma.product.findMany(queryBuilder).then((entities) => ({ entities }));
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
+
+    return new PageDto(entities, pageMetaDto);
   }
 
   async findAllWithCategory() {
@@ -57,21 +69,19 @@ export class ProductService {
     });
   }
 
-// Produits filtrés par mot-clé
-async searchProducts(search: string) {
-  return this.prisma.product.findMany({
-    where: {
-      OR: [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ],
-    },
-  });
-}
+  // Produits filtrés par mot-clé
+  async searchProducts(search: string) {
+    return this.prisma.product.findMany({
+      where: {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ],
+      },
+    });
+  }
 
-
-   
-   // obtenir un produit par son id
+  // obtenir un produit par son id
   async findOne(id: string): Promise<product | null> {
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -81,7 +91,7 @@ async searchProducts(search: string) {
         description: true,
         price: true,
         stockInitial: true,
-        stockFinal: true,  
+        stockFinal: true,
         categoryId: true,
         imageUrl: true,
         createdAt: true,
@@ -101,65 +111,60 @@ async searchProducts(search: string) {
         },
       },
     });
-    
+
     if (!product) {
       throw new NotFoundException(`Produit avec l'ID ${id} non trouvé`);
     }
-    
+
     return product;
   }
-  
+
   // modifier un produit
   async update(id: string, data: UpdateProductDto): Promise<product> {
-    // Vérifier si le produit existe
     const existingProduct = await this.prisma.product.findUnique({
       where: { id },
     });
-    
+
     if (!existingProduct) {
       throw new NotFoundException(`Produit avec l'ID ${id} non trouvé`);
     }
-    
-    // Mettre à jour le produit
+
     return this.prisma.product.update({
       where: { id },
       data
     });
   }
-  
+
   // Mettre à jour l'image d'un produit
   async updateProductImage(productId: string, imageUrl: string): Promise<product> {
-  const product = await this.prisma.product.findUnique({
-    where: { id: productId },
-  });
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
 
-  if (!product) {
-    throw new NotFoundException(`Produit avec l'ID ${productId} non trouvé`);
+    if (!product) {
+      throw new NotFoundException(`Produit avec l'ID ${productId} non trouvé`);
+    }
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: {
+        imageUrl: imageUrl
+      }
+    });
   }
 
-  return this.prisma.product.update({
-    where: { id: productId },
-    data: {
-      imageUrl: imageUrl
-    }
-  });
-}
-
-  
   // supprimer un produit
   async remove(id: string): Promise<product> {
     const product = await this.prisma.product.findUnique({
       where: { id },
     });
-    
+
     if (!product) {
       throw new NotFoundException(`Produit avec l'ID ${id} non trouvé`);
     }
-    
+
     return this.prisma.product.delete({
       where: { id },
     });
   }
-  
-
 }

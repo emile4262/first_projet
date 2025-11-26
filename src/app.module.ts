@@ -56,7 +56,8 @@ import { DeliveryService } from './delivery/delivery.service';
     ReviewModule,
     CartModule,
     DeliveryModule,
-    DeliveryModule
+    DeliveryModule,
+    
     
   ],
   controllers: [AppController, UsersController, ProductController, OrderController,CategoryController, ReviewController,  CartController, DeliveryController],

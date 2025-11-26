@@ -13,7 +13,7 @@ constructor(
   private usersService: UsersService,
 ) {
    const secret = configService.get<string>('JWT_SECRET') as string;
-   console.log('JWT_SECRET utilisé par JwtStrategy:', secret); // <-- Ajoute ceci
+  //  console.log('JWT_SECRET utilisé par JwtStrategy:', secret); // <-- Ajoute ceci
    super({
      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
      ignoreExpiration: false,

@@ -1,23 +1,22 @@
-import { Controller, Post, Body, Get,Param,Patch,Delete,UseGuards,Req, BadRequestException, UnauthorizedException,} from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Delete, UseGuards, Req, BadRequestException, UnauthorizedException, Query } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-reviews.dto';
 import { UpdateReviewDto } from './dto/update-reviews.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { RolesGuard } from 'src/auth/roles.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Review } from '@prisma/client';
-
+import { PageOptionsDto } from '../common/dto/page-options.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('reviews')
 @ApiBearerAuth()
 @Controller('reviews')
 export class ReviewController {
-  prisma: any;
-  constructor(private readonly reviewService: ReviewService) {}
-   
-  @ApiBearerAuth()
+  constructor(private readonly reviewService: ReviewService) { }
+
+  @ApiOperation({ summary: 'Créer un avis' })
   @Post()
   @Roles(Role.admin)
   create(@Body() createReviewDto: CreateReviewDto) {
@@ -25,23 +24,21 @@ export class ReviewController {
   }
 
   // obtenir tous les avis
-   
-@ApiBearerAuth()
-@Get()
-@Roles(Role.admin)
-async getAllReview() {
-  return await this.reviewService.findAll();
-}
-
-   
-  @ApiBearerAuth()
-  @Get('id')
+  @ApiOperation({ summary: 'Obtenir tous les avis' })
+  @Get()
   @Roles(Role.admin)
-   async findOne(@Param('id') id: string) {
+  async getAllReview(@Query() pageOptionsDto: PageOptionsDto) {
+    return await this.reviewService.findAll(pageOptionsDto);
+  }
+
+  @ApiOperation({ summary: 'Obtenir un avis par ID' })
+  @Get(':id')
+  @Roles(Role.admin)
+  async findOne(@Param('id') id: string) {
     return this.reviewService.findOne(id);
   }
-   
-  @ApiBearerAuth()
+
+  @ApiOperation({ summary: 'Mettre à jour un avis' })
   @Patch(':id')
   @Roles(Role.admin)
   update(
@@ -52,7 +49,7 @@ async getAllReview() {
     return this.reviewService.update(req.user.sub, id, dto);
   }
 
-  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Supprimer un avis' })
   @Delete(':id')
   @Roles(Role.admin)
   remove(@Param('id') id: string, @Req() req) {
