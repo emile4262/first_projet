@@ -12,9 +12,6 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { randomInt } from 'crypto';
 import * as nodemailer from 'nodemailer';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
-import { PageDto } from '../common/dto/page.dto';
-import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 
 
@@ -102,32 +99,19 @@ export class UsersService {
 
   }
   // obténir tous les utilisateurs avec pagination
-  async findAll(pageOptionsDto: PageOptionsDto): Promise<PageDto<Partial<User>>> {
-    const queryBuilder = {
-      skip: (pageOptionsDto.page - 1) * pageOptionsDto.take,
-      take: pageOptionsDto.take,
-      orderBy: {
-        createdAt: pageOptionsDto.order,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        role: true,
-        admin: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    };
+  async findAll() {
+  return this.prisma.user.findMany({
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
 
-    const itemCount = await this.prisma.user.count();
-    const { entities } = await this.prisma.user.findMany(queryBuilder).then((entities) => ({ entities }));
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
-
-    return new PageDto(entities, pageMetaDto);
-  }
 
   //  obténir un utilisateur pas sont id
   async findOne(id: string): Promise<Partial<User>> {

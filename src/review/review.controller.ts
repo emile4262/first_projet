@@ -7,7 +7,6 @@ import { Role, Roles } from 'src/auth/role.decorateur';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Review } from '@prisma/client';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('reviews')
@@ -27,8 +26,8 @@ export class ReviewController {
   @ApiOperation({ summary: 'Obtenir tous les avis' })
   @Get()
   @Roles(Role.admin)
-  async getAllReview(@Query() pageOptionsDto: PageOptionsDto) {
-    return await this.reviewService.findAll(pageOptionsDto);
+  async getAllReview() {
+    return await this.reviewService.findAll();
   }
 
   @ApiOperation({ summary: 'Obtenir un avis par ID' })

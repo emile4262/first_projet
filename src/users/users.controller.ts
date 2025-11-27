@@ -21,7 +21,6 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -50,18 +49,8 @@ export class UsersController {
   @Roles(Role.admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
-  async findAll(@Query() pageOptionsDto: PageOptionsDto) {
-    return this.usersService.findAll(pageOptionsDto);
-  }
-
-  // Récupérer son propre profil 
-  @Get('profile/me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Récupérer son propre profil' })
-  async getProfile(@Req() req: Request) {
-    const user = req.user as any;
-    return this.usersService.findOne(user.sub);
+  async findAll() {
+    return this.usersService.findAll();
   }
 
   // Mettre à jour son propre profil

@@ -10,7 +10,6 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiRespons
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('products')
@@ -90,8 +89,8 @@ export class ProductController {
 
   @Get()
   @UseInterceptors(new ExcludeFieldsInterceptor(['stockInitial']))
-  findAll(@Query() pageOptionsDto: PageOptionsDto) {
-    return this.productService.findAll(pageOptionsDto);
+  findAll() {
+    return this.productService.findAll();
   }
 
   @Get('with-category')

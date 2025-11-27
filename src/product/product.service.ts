@@ -3,9 +3,6 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaService } from 'src/prisma.service';
 import { product } from '@prisma/client';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
-import { PageDto } from '../common/dto/page.dto';
-import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 @Injectable()
 export class ProductService {
@@ -44,21 +41,20 @@ export class ProductService {
   }
 
   // Tous les produits avec pagination
-  async findAll(pageOptionsDto: PageOptionsDto): Promise<PageDto<product>> {
-    const queryBuilder = {
-      skip: pageOptionsDto.skip,
-      take: pageOptionsDto.take,
-      orderBy: {
-        createdAt: pageOptionsDto.order,
+  async findAll(): Promise<product[]> {
+    return this.prisma.product.findMany({
+      include: {
+        category: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        }
       },
-    };
-
-    const itemCount = await this.prisma.product.count();
-    const { entities } = await this.prisma.product.findMany(queryBuilder).then((entities) => ({ entities }));
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
-
-    return new PageDto(entities, pageMetaDto);
+    });
   }
 
   async findAllWithCategory() {

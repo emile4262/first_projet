@@ -7,7 +7,6 @@ import { UpdateOrderStatusDto } from './dto/update-order.dto';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Order } from '@prisma/client';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('order')
@@ -25,8 +24,8 @@ export class OrderController {
   @ApiOperation({ summary: 'Obtenir tous les orders' })
   @Get()
   @Roles(Role.admin)
-  findAll(@Query() pageOptionsDto: PageOptionsDto) {
-    return this.orderService.getAllOrders(pageOptionsDto);
+  findAll() {
+    return this.orderService.getAllOrders();
   }
 
   @ApiOperation({ summary: 'Obtenir un order par ID' })

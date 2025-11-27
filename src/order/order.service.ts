@@ -3,9 +3,6 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from '@prisma/client';
 import { UpdateOrderStatusDto } from './dto/update-order.dto';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
-import { PageDto } from '../common/dto/page.dto';
-import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
@@ -66,26 +63,14 @@ export class OrderService {
   }
 
   // obtenir tous les orders avec pagination
-  async getAllOrders(pageOptionsDto: PageOptionsDto): Promise<PageDto<Order>> {
-    const queryBuilder = {
-      orderBy: {
-        createdAt: pageOptionsDto.order,
-      },
-      skip: pageOptionsDto.skip,
-      take: pageOptionsDto.take,
-      include: {
-        products: true,
-        user: true,
-      },
-    };
+  async getAllOrders(): Promise<Order[]> {
+  return this.prisma.order.findMany({
+    include: { 
+      user: true,
+    },
+  });
+}
 
-    const itemCount = await this.prisma.order.count();
-    const { entities } = await this.prisma.order.findMany(queryBuilder).then((entities) => ({ entities }));
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
-
-    return new PageDto(entities, pageMetaDto);
-  }
 
   // Obtenir un order par ID
   async findOne(id: string): Promise<Order> {

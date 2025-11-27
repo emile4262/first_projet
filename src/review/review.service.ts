@@ -3,9 +3,6 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateReviewDto } from './dto/create-reviews.dto';
 import { UpdateReviewDto } from './dto/update-reviews.dto';
 import { Review } from './entities/reviews.entity';
-import { PageOptionsDto } from '../common/dto/page-options.dto';
-import { PageDto } from '../common/dto/page.dto';
-import { PageMetaDto } from '../common/dto/page-meta.dto';
 
 @Injectable()
 export class ReviewService {
@@ -74,21 +71,14 @@ export class ReviewService {
   // obtient tous les avis
 
   // obtient tous les avis avec pagination
-  async findAll(pageOptionsDto: PageOptionsDto): Promise<PageDto<Review>> {
-    const queryBuilder = {
-      skip: pageOptionsDto.skip,
-      take: pageOptionsDto.take,
-      orderBy: {
-        createdAt: pageOptionsDto.order,
-      },
-    };
-
-    const itemCount = await this.prisma.review.count();
-    const { entities } = await this.prisma.review.findMany(queryBuilder).then((entities) => ({ entities }));
-
-    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
-
-    return new PageDto(entities, pageMetaDto);
+  async findAll(): Promise<Review[]> {
+    return this.prisma.review.findMany({
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+      }
+    });
   }
 
   // obtenir un avis par son id
