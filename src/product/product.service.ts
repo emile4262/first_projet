@@ -66,16 +66,16 @@ export class ProductService {
   }
 
   // Produits filtrés par mot-clé
-  async searchProducts(search: string) {
-    return this.prisma.product.findMany({
-      where: {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-        ],
-      },
-    });
-  }
+  // async searchProducts(search: string) {
+  //   return this.prisma.product.findMany({
+  //     where: {
+  //       OR: [
+  //         { name: { contains: search, mode: 'insensitive' } },
+  //         { description: { contains: search, mode: 'insensitive' } },
+  //       ],
+  //     },
+  //   });
+  // }
 
   // obtenir un produit par son id
   async findOne(id: string): Promise<product | null> {

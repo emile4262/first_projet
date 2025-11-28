@@ -23,19 +23,6 @@ import { CategoryService } from './category/category.service';
 import { OrderModule } from './order/order.module';
 import { OrderController } from './order/order.controller';
 import { OrderService } from './order/order.service';
-// import { CartModule } from './cart/cart.module';
-import { ReviewModule } from './review/review.module';
-import { ReviewController } from './review/review.controller';
-import { ReviewService } from './review/review.service';
-// import { PaymentService } from './payement/payement.service';
-// import { PaymentController } from './payement/payement.controller';
-// import { PaymentModule } from './payement/payement.module';
-import { CartModule } from './cart/cart.module';
-import { CartController } from './cart/cart.controller';
-import { CartService } from './cart/cart.service';
-import { DeliveryModule } from './delivery/delivery.module';
-import { DeliveryController } from './delivery/delivery.controller';
-import { DeliveryService } from './delivery/delivery.service';
 
 
 
@@ -46,22 +33,21 @@ import { DeliveryService } from './delivery/delivery.service';
     }),
     //UsersModule,
     AuthModule,
-    UsersModule, ProductModule,CategoryModule, CartModule,
+    UsersModule, ProductModule,CategoryModule,
     ServeStaticModule.forRoot({ // Configurez ServeStaticModule ici
       rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
     }),
     // CartModule,
     OrderModule,
-    ReviewModule,
-    CartModule,
-    DeliveryModule,
-    DeliveryModule,
+    
+    // DeliveryModule,
+    // DeliveryModule,
     
     
   ],
-  controllers: [AppController, UsersController, ProductController, OrderController,CategoryController, ReviewController,  CartController, DeliveryController],
-  providers: [AppService, UsersService, ProductService, OrderService, CategoryService,ReviewService,  CartService, DeliveryService
+  controllers: [AppController, UsersController, ProductController, OrderController,CategoryController,  ],
+  providers: [AppService, UsersService, ProductService, OrderService, CategoryService,   
     // {
     //   provide: APP_GUARD,
     //   useClass: AuthGuard('jwt'),

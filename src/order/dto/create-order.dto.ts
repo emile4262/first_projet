@@ -18,7 +18,7 @@ export class CreateOrderDto {
     @Min(1)
     quantity: number;
 
-    @ApiProperty({ required: false })
+    // @ApiProperty({ required: false })
     @IsOptional()
     is_available?: boolean;
 }

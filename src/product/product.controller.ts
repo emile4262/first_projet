@@ -87,29 +87,39 @@ export class ProductController {
     return this.productService.create(createProductDto);
   }
 
+  @ApiOperation({ summary: 'Récupérer tous les produits' })
+  @ApiResponse({ status: 200, description: 'Produits récupérés avec succès' })
+  @ApiResponse({ status: 401, description: 'Non autorisé' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get()
   @UseInterceptors(new ExcludeFieldsInterceptor(['stockInitial']))
   findAll() {
     return this.productService.findAll();
   }
 
-  @Get('with-category')
-  findAllWithCategory() {
-    return this.productService.findAllWithCategory();
-  }
+  // @ApiOperation({ summary: 'Récupérer tous les produits avec leurs catégories' })
+  // @ApiResponse({ status: 200, description: 'Produits récupérés avec succès' })
+  // @ApiResponse({ status: 401, description: 'Non autorisé' })
+  // @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth()
+  // @Get('with-category')
+  // findAllWithCategory() {
+  //   return this.productService.findAllWithCategory();
+  // }
 
-  @ApiOperation({ summary: 'Rechercher les products' })
-  @ApiParam({ name: 'recherche', description: 'rechercher un product' })
-  @ApiResponse({ status: 200, description: 'Produit récupéré avec succès' })
-  @ApiResponse({ status: 404, description: 'Produit non trouvé' })
-  @ApiResponse({ status: 401, description: 'Non autorisé' })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Get('search')
-  @Roles(Role.admin)
-  async search(@Query('search') search: string) {
-    return this.productService.searchProducts(search);
-  }
+  // @ApiOperation({ summary: 'Rechercher les products' })
+  // @ApiParam({ name: 'recherche', description: 'rechercher un product' })
+  // @ApiResponse({ status: 200, description: 'Produit récupéré avec succès' })
+  // @ApiResponse({ status: 404, description: 'Produit non trouvé' })
+  // @ApiResponse({ status: 401, description: 'Non autorisé' })
+  // @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth()
+  // @Get('search')
+  // @Roles(Role.admin)
+  // async search(@Query('search') search: string) {
+  //   return this.productService.searchProducts(search);
+  // }
 
   @ApiOperation({ summary: 'Récupérer un produit par son ID' })
   @ApiParam({ name: 'id', description: 'ID du produit' })

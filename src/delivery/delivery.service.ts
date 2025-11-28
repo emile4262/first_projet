@@ -1,221 +1,221 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma.service';
-import { Delivery, DeliveryStatus } from '@prisma/client';
-import { CreateDeliveryDto } from './dto/create-delivery.dto';
-import { UpdateDeliveryDto } from './dto/update-delivery.dto';
+// import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// import { PrismaService } from 'src/prisma.service';
+// import { Delivery, DeliveryStatus } from '@prisma/client';
+// import { CreateDeliveryDto } from './dto/create-delivery.dto';
+// import { UpdateDeliveryDto } from './dto/update-delivery.dto';
 
-@Injectable()
-export class DeliveryService {
-  findManyByDeliveryDate(date: string) {
-    throw new Error('Method not implemented.');
-  }
-  constructor(private readonly prisma: PrismaService) {}
+// @Injectable()
+// export class DeliveryService {
+//   findManyByDeliveryDate(date: string) {
+//     throw new Error('Method not implemented.');
+//   }
+//   constructor(private readonly prisma: PrismaService) {}
 
-  // Créer une livraison
-  async create(data: CreateDeliveryDto): Promise<Delivery> {
-    if (!data.orderId) {
-      throw new BadRequestException("L'identifiant de la commande est requis");
-    }
+//   // Créer une livraison
+//   async create(data: CreateDeliveryDto): Promise<Delivery> {
+//     if (!data.orderId) {
+//       throw new BadRequestException("L'identifiant de la commande est requis");
+//     }
 
-    // Vérifier que la commande existe
-    const order = await this.prisma.order.findUnique({
-      where: { id: data.orderId },
-      select: { id: true },
-    });
-    if (!order) {
-      throw new NotFoundException("Commande non trouvée");
-    }
+//     // Vérifier que la commande existe
+//     const order = await this.prisma.order.findUnique({
+//       where: { id: data.orderId },
+//       select: { id: true },
+//     });
+//     if (!order) {
+//       throw new NotFoundException("Commande non trouvée");
+//     }
 
-    // Validation et parsing des dates
-    const deliveryDate = this.parseDate(data.deliveryDate);
-    const deliveredAt = this.parseDate(data.deliveredAt);
+//     // Validation et parsing des dates
+//     const deliveryDate = this.parseDate(data.deliveryDate);
+//     const deliveredAt = this.parseDate(data.deliveredAt);
 
-    // Validation du status enum (valeurs possibles : PENDING, APPROVED, DELIVERED, CANCELED)
-    const status: DeliveryStatus = Object.values(DeliveryStatus).includes(data.status as DeliveryStatus)
-      ? (data.status as DeliveryStatus)
-      : DeliveryStatus.PENDING;
+//     // Validation du status enum (valeurs possibles : PENDING, APPROVED, DELIVERED, CANCELED)
+//     const status: DeliveryStatus = Object.values(DeliveryStatus).includes(data.status as DeliveryStatus)
+//       ? (data.status as DeliveryStatus)
+//       : DeliveryStatus.PENDING;
 
-    return this.prisma.delivery.create({
-      data: {
-        address: data.address,
-        method: data.method ?? null,
-        status,
-        deliveryDate,
-        deliveredAt,
-        order: { connect: { id: order.id } },
-      },
-    });
-  }
+//     return this.prisma.delivery.create({
+//       data: {
+//         address: data.address,
+//         method: data.method ?? null,
+//         status,
+//         deliveryDate,
+//         deliveredAt,
+//         order: { connect: { id: order.id } },
+//       },
+//     });
+//   }
 
-  private parseDate(date?: string | Date): Date | null {
-    if (!date) return null;
-    const d = date instanceof Date ? date : new Date(date);
-    if (isNaN(d.getTime())) {
-      throw new BadRequestException(`Date invalide: ${date}`);
-    }
-    return d;
-  }
+//   private parseDate(date?: string | Date): Date | null {
+//     if (!date) return null;
+//     const d = date instanceof Date ? date : new Date(date);
+//     if (isNaN(d.getTime())) {
+//       throw new BadRequestException(`Date invalide: ${date}`);
+//     }
+//     return d;
+//   }
 
-  // Trouver toutes les livraisons
-  async findAll(): Promise<Delivery[]> {
-    return this.prisma.delivery.findMany();
-  }
+//   // Trouver toutes les livraisons
+//   async findAll(): Promise<Delivery[]> {
+//     return this.prisma.delivery.findMany();
+//   }
 
-  // Trouver les livraisons par date de livraison
-async findDeliveriesByExactDate(dateString: string): Promise<Delivery[]> {
-  const parsedDate = new Date(dateString);
+//   // Trouver les livraisons par date de livraison
+// async findDeliveriesByExactDate(dateString: string): Promise<Delivery[]> {
+//   const parsedDate = new Date(dateString);
  
 
-  const startOfDay = new Date(parsedDate);
-  startOfDay.setHours(0, 0, 0, 0);
+//   const startOfDay = new Date(parsedDate);
+//   startOfDay.setHours(0, 0, 0, 0);
 
   
 
-  const endOfDay = new Date(parsedDate);
-  endOfDay.setHours(23, 59, 59, 999);
+//   const endOfDay = new Date(parsedDate);
+//   endOfDay.setHours(23, 59, 59, 999);
 
-  const deliveries = await this.prisma.delivery.findMany({
-    where: {
-      deliveryDate: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-    },
-    include: {
-      order: true,
-    },
-  });
+//   const deliveries = await this.prisma.delivery.findMany({
+//     where: {
+//       deliveryDate: {
+//         gte: startOfDay,
+//         lte: endOfDay,
+//       },
+//     },
+//     include: {
+//       order: true,
+//     },
+//   });
 
-  if (deliveries.length === 0) {
-    throw new NotFoundException(
-      `Aucune livraison trouvée à la date exacte : ${dateString}`,
-    );
-  }
+//   if (deliveries.length === 0) {
+//     throw new NotFoundException(
+//       `Aucune livraison trouvée à la date exacte : ${dateString}`,
+//     );
+//   }
 
-  return deliveries;
-}
+//   return deliveries;
+// }
 
 
-  // Trouver une livraison par son id
-  async findOne(id: string): Promise<Delivery> {
-    const delivery = await this.prisma.delivery.findUnique({ where: { id } });
-    if (!delivery) {
-      throw new NotFoundException('Livraison non trouvée');
-    }
-    return delivery;
-  }
+//   // Trouver une livraison par son id
+//   async findOne(id: string): Promise<Delivery> {
+//     const delivery = await this.prisma.delivery.findUnique({ where: { id } });
+//     if (!delivery) {
+//       throw new NotFoundException('Livraison non trouvée');
+//     }
+//     return delivery;
+//   }
 
-  // Mettre à jour une livraison
-  async update(id: string, dto: UpdateDeliveryDto): Promise<Delivery> {
-    if (!id) {
-      throw new BadRequestException("L'identifiant de la livraison est requis");
-    }
+//   // Mettre à jour une livraison
+//   async update(id: string, dto: UpdateDeliveryDto): Promise<Delivery> {
+//     if (!id) {
+//       throw new BadRequestException("L'identifiant de la livraison est requis");
+//     }
 
-    // Vérifie que la livraison existe
-    const existingDelivery = await this.prisma.delivery.findUnique({
-      where: { id },
-    });
+//     // Vérifie que la livraison existe
+//     const existingDelivery = await this.prisma.delivery.findUnique({
+//       where: { id },
+//     });
 
-    if (!existingDelivery) {
-      throw new NotFoundException('Livraison non trouvée');
-    }
+//     if (!existingDelivery) {
+//       throw new NotFoundException('Livraison non trouvée');
+//     }
 
-    // Vérifie que la commande existe si un orderId est fourni
-    if (dto.orderId) {
-      const order = await this.prisma.order.findUnique({
-        where: { id: dto.orderId },
-      });
+//     // Vérifie que la commande existe si un orderId est fourni
+//     if (dto.orderId) {
+//       const order = await this.prisma.order.findUnique({
+//         where: { id: dto.orderId },
+//       });
 
-      if (!order) {
-        throw new NotFoundException("Commande liée non trouvée");
-      }
-    }
+//       if (!order) {
+//         throw new NotFoundException("Commande liée non trouvée");
+//       }
+//     }
 
-    // Construction sécurisée des données de mise à jour
-    const updateData: any = {
-      address: dto.address,
-      method: dto.method,
-      deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : undefined,
-      deliveredAt: dto.deliveredAt ? new Date(dto.deliveredAt) : undefined,
-    };
+//     // Construction sécurisée des données de mise à jour
+//     const updateData: any = {
+//       address: dto.address,
+//       method: dto.method,
+//       deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : undefined,
+//       deliveredAt: dto.deliveredAt ? new Date(dto.deliveredAt) : undefined,
+//     };
 
-    // Si un statut est fourni, on s’assure qu’il est correct
-    if (dto.status && Object.values(DeliveryStatus).includes(dto.status as DeliveryStatus)) {
-      updateData.status = {
-        set: dto.status as DeliveryStatus,
-      };
-    }
+//     // Si un statut est fourni, on s’assure qu’il est correct
+//     if (dto.status && Object.values(DeliveryStatus).includes(dto.status as DeliveryStatus)) {
+//       updateData.status = {
+//         set: dto.status as DeliveryStatus,
+//       };
+//     }
 
-    // Connexion à une autre commande si fourni
-    if (dto.orderId) {
-      updateData.order = {
-        connect: {
-          id: dto.orderId,
-        },
-      };
-    }
+//     // Connexion à une autre commande si fourni
+//     if (dto.orderId) {
+//       updateData.order = {
+//         connect: {
+//           id: dto.orderId,
+//         },
+//       };
+//     }
 
-    // Mise à jour
-    return this.prisma.delivery.update({
-      where: { id },
-      data: updateData,
-      include: { order: true },
-    });
-  }
+//     // Mise à jour
+//     return this.prisma.delivery.update({
+//       where: { id },
+//       data: updateData,
+//       include: { order: true },
+//     });
+//   }
 
-  // Supprimer une livraison
-  async remove(id: string): Promise<{ message: string }> {
-    const existing = await this.prisma.delivery.findUnique({ where: { id } });
-    if (!existing) {
-      throw new NotFoundException('Livraison non trouvée');
-    }
-    await this.prisma.delivery.delete({ where: { id } });
-    return { message: 'Livraison supprimée avec succès' };
-  }
-    // confirmation d'une livraison 
+//   // Supprimer une livraison
+//   async remove(id: string): Promise<{ message: string }> {
+//     const existing = await this.prisma.delivery.findUnique({ where: { id } });
+//     if (!existing) {
+//       throw new NotFoundException('Livraison non trouvée');
+//     }
+//     await this.prisma.delivery.delete({ where: { id } });
+//     return { message: 'Livraison supprimée avec succès' };
+//   }
+//     // confirmation d'une livraison 
    
-  async confirmDelivery(id: string): Promise<Delivery> {
-    const delivery = await this.prisma.delivery.findUnique({ where: { id } });
-    if (!delivery) {
-      throw new NotFoundException('Livraison non trouvée');
-    }
+//   async confirmDelivery(id: string): Promise<Delivery> {
+//     const delivery = await this.prisma.delivery.findUnique({ where: { id } });
+//     if (!delivery) {
+//       throw new NotFoundException('Livraison non trouvée');
+//     }
 
-    // Vérifie si la livraison est déjà confirmée
-    if (delivery.status === DeliveryStatus.DELIVERED) {
-      throw new BadRequestException('La livraison est déjà confirmée');
-    }
+//     // Vérifie si la livraison est déjà confirmée
+//     if (delivery.status === DeliveryStatus.DELIVERED) {
+//       throw new BadRequestException('La livraison est déjà confirmée');
+//     }
 
-    // Met à jour le statut de la livraison
-    return this.prisma.delivery.update({
-      where: { id },
-      data: {
-        status: DeliveryStatus.DELIVERED,
-        deliveredAt: new Date(), // Met à jour la date de livraison
-      },
-    });
+//     // Met à jour le statut de la livraison
+//     return this.prisma.delivery.update({
+//       where: { id },
+//       data: {
+//         status: DeliveryStatus.DELIVERED,
+//         deliveredAt: new Date(), // Met à jour la date de livraison
+//       },
+//     });
 
-  }
-  // Annuler une livraison
-  async cancelDelivery(id: string): Promise<Delivery> {
-    const delivery = await this.prisma.delivery.findUnique({ where: { id } });
-    if (!delivery) {
-      throw new NotFoundException('Livraison non trouvée');
-    }
+//   }
+//   // Annuler une livraison
+//   async cancelDelivery(id: string): Promise<Delivery> {
+//     const delivery = await this.prisma.delivery.findUnique({ where: { id } });
+//     if (!delivery) {
+//       throw new NotFoundException('Livraison non trouvée');
+//     }
 
-    // Vérifie si la livraison est déjà annulée
-    if (delivery.status === DeliveryStatus.CANCELED) {
-      throw new BadRequestException('La livraison est déjà annulée');
-    }
+//     // Vérifie si la livraison est déjà annulée
+//     if (delivery.status === DeliveryStatus.CANCELED) {
+//       throw new BadRequestException('La livraison est déjà annulée');
+//     }
 
-    // Met à jour le statut de la livraison
-    return this.prisma.delivery.update({
-      where: { id },
-      data: {
-        status: DeliveryStatus.CANCELED,
-        deliveredAt: null, // Réinitialise la date de livraison
-      },
-    });
-  }
-    }
+//     // Met à jour le statut de la livraison
+//     return this.prisma.delivery.update({
+//       where: { id },
+//       data: {
+//         status: DeliveryStatus.CANCELED,
+//         deliveredAt: null, // Réinitialise la date de livraison
+//       },
+//     });
+//   }
+//     }
 
 
