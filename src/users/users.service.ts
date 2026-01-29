@@ -22,53 +22,30 @@ export class UsersService {
     private readonly jwtService: JwtService
   ) { }
 
-  // Méthode pour exclure le mot de passe et le rôle
-  // private excludeSensitiveFields(user: User): Omit<User, 'password' | 'role'> {
-  //   const { password, role, ...safeUser } = user;
-  //   return safeUser;
-  // }
 
-  // async findByEmail(email: string): Promise<User | null> {
-  //   return this.prisma.user.findUnique({
-  //     where: { email },
+  // async updateUserRole(userId: string, newRole: 'admin' | 'user'): Promise<User> {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { id: userId },
+  //   });
+
+  //   if (!user) {
+  //     throw new NotFoundException(`Utilisateur avec l'ID ${userId} non trouvé`);
+  //   }
+
+  //   if (newRole === 'admin' && user.email !== 'brou@gmail.com') {
+  //     throw new BadRequestException('Seul brou@gmail.com peut être administrateur');
+  //   }
+
+  //   return this.prisma.user.update({
+  //     where: { id: userId },
+  //     data: {
+  //       role: newRole,
+  //       admin: newRole === 'admin',
+  //     },
   //   });
   // }
 
-  // async verifyUser(email: string, password: string): Promise<User | null> {
-  //   const user = await this.findByEmail(email);
-  //   if (!user) {
-  //     return null;
-  //   }
-
-  //   const isPasswordValid = await bcrypt.compare(password, user.password);
-  //   return isPasswordValid ? user : null;
-  // }
-
-  async updateUserRole(userId: string, newRole: 'admin' | 'user'): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`Utilisateur avec l'ID ${userId} non trouvé`);
-    }
-
-    if (newRole === 'admin' && user.email !== 'brou@gmail.com') {
-      throw new BadRequestException('Seul brou@gmail.com peut être administrateur');
-    }
-
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        role: newRole,
-        admin: newRole === 'admin',
-      },
-    });
-  }
-
-  // async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'role'>> {
-  //   return this.createUser(createUserDto);
-  // }
+  
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { email, password, firstName, lastName } = createUserDto;
@@ -82,7 +59,7 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 8);
-    const isAdmin = email === 'brou@gmail.com';
+    const isAdmin = email === 'bnandoemile@gmail.com';
 
     const user = await this.prisma.user.create({
       data: {
@@ -106,6 +83,7 @@ export class UsersService {
       firstName: true,
       lastName: true,
       email: true,
+      role: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -137,7 +115,7 @@ export class UsersService {
   }
 
   // modifier un utilisateur par son id
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto, ): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -146,33 +124,27 @@ export class UsersService {
       throw new NotFoundException(`Utilisateur avec l'ID ${id} non trouvé`);
     }
 
-    const updateData: any = { ...updateUserDto };
-
-    if (updateUserDto.password) {
-      updateData.password = await bcrypt.hash(updateUserDto.password, 10);
-    }
-
-    // Synchroniser les champs admin et role si l'un d'eux est mis à jour
-    if (updateUserDto.role) {
-      updateData.admin = updateUserDto.role === 'admin';
-    }
-
     return this.prisma.user.update({
       where: { id },
-      data: updateData,
+      data: user,
     });
   }
   //  supprimer un utlisateur
   async remove(id: string): Promise<void> {
-    await this.findOne(id);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException(`Utilisateur avec l'ID ${id} non trouvé`);
+    }
     await this.prisma.user.delete({ where: { id } });
   }
 
-  async findUserForAuth(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
-  }
+  // async findUserForAuth(email: string): Promise<User | null> {
+  //   return this.prisma.user.findUnique({
+  //     where: { email },
+  //   });
+  // }
 
   // connexion d'un utilisateur
   async login(email: string, password: string): Promise<{
@@ -181,8 +153,8 @@ export class UsersService {
     access_token?: string;
     refresh_token?: string;
     user?: any;
-  }> {
-    try {
+     }> {
+      try {
       const user = await this.prisma.user.findUnique({ where: { email } });
 
       if (!user) {
@@ -194,8 +166,8 @@ export class UsersService {
         return { success: false, message: 'Mot de passe incorrect' };
       }
 
-      // Seul 'brou@gmail.com' est considéré comme admin
-      const userRole = email === 'brou@gmail.com' ? 'admin' : 'user';
+      // Seul 'bnandoemile@gmail.com' est considéré comme admin
+      const userRole = email === 'bnandoemile@gmail.com' ? 'admin' : 'user';
 
       const payload = {
         sub: user.id,
@@ -241,66 +213,67 @@ export class UsersService {
     }
   }
 
-  async createAdmin(createUserDto: CreateUserDto): Promise<User> {
-    const { email, password, firstName, lastName } = createUserDto;
+  // async createAdmin(createUserDto: CreateUserDto): Promise<User> {
+  //   const { email, password, firstName, lastName } = createUserDto;
 
-    // Seul 'brou@gmail.com' peut être créé comme admin
-    if (email !== 'brou@gmail.com') {
-      throw new BadRequestException('Seul brou@gmail.com peut être administrateur');
-    }
+  //   // Seul 'brou@gmail.com' peut être créé comme admin
+  //   if (email !== 'brou@gmail.com') {
+  //     throw new BadRequestException('Seul brou@gmail.com peut être administrateur');
+  //   }
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+  //   const existingUser = await this.prisma.user.findUnique({
+  //     where: { email },
+  //   });
 
-    if (existingUser) {
-      throw new ConflictException('Cet email est déjà utilisé');
-    }
+  //   if (existingUser) {
+  //     throw new ConflictException('Cet email est déjà utilisé');
+  //   }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  //   const hashedPassword = await bcrypt.hash(password, 10);
 
-    return this.prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-        admin: true,
-        role: 'admin',
-        createdAt: new Date(),
-      },
-    });
-  }
+  //   return this.prisma.user.create({
+  //     data: {
+  //       firstName,
+  //       lastName,
+  //       email,
+  //       password: hashedPassword,
+  //       admin: true,
+  //       role: 'admin',
+  //       createdAt: new Date(),
+  //     },
+  //   });
+  // }
 
   // Méthode utilitaire pour vérifier si un utilisateur est admin
-  async isUserAdmin(email: string): Promise<boolean> {
-    return email === 'brou@gmail.com';
-  }
+  // async isUserAdmin(email: string): Promise<boolean> {
+  //   return email === 'brou@gmail.com';
+  // }
 
   // Méthode pour promouvoir un utilisateur en admin
-  async promoteToAdmin(userId: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+  // async promoteToAdmin(userId: string): Promise<User> {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { id: userId },
+  //   });
 
-    if (!user) {
-      throw new NotFoundException(`Utilisateur avec l'ID ${userId} non trouvé`);
-    }
+  //   if (!user) {
+  //     throw new NotFoundException(`Utilisateur avec l'ID ${userId} non trouvé`);
+  //   }
 
-    // Seul 'brou@gmail.com' peut être promu admin
-    if (user.email !== 'brou@gmail.com') {
-      throw new BadRequestException('Seul brou@gmail.com peut être administrateur');
-    }
+  //   // Seul 'brou@gmail.com' peut être promu admin
+  //   if (user.email !== 'brou@gmail.com') {
+  //     throw new BadRequestException('Seul brou@gmail.com peut être administrateur');
+  //   }
 
-    return this.updateUserRole(userId, 'admin');
-  }
-
-  // Méthode pour rétrograder un admin en utilisateur normal
-  async demoteFromAdmin(userId: string): Promise<User> {
-    return this.updateUserRole(userId, 'user');
-  }
+  //   return this.updateUserRole(userId, 'admin');
+  // }
 
   // Méthode pour rétrograder un admin en utilisateur normal
+  // async demoteFromAdmin(userId: string): Promise<User> {
+  //   return this.updateUserRole(userId, 'user');
+  // }
+
+  // Méthode pour rétrograder un admin en utilisateur normal
+ 
   async sendOtp(dto: ResetPasswordDto) {
     { } const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
 
@@ -308,19 +281,6 @@ export class UsersService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    // ⚠️ Limite de 1 fois par mois pour les utilisateurs non-admin
-    // if (user.role !== 'admin' && user.lastPasswordResetAt) {
-    //   const now = new Date();
-    //   const nextAllowed = new Date(user.lastPasswordResetAt);
-    //   nextAllowed.setMonth(nextAllowed.getMonth() + 1);
-
-    //   if (now < nextAllowed) {
-    //     const daysLeft = Math.ceil((nextAllowed.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    //     throw new BadRequestException(
-    //       `Vous avez déjà réinitialisé votre mot de passe ce mois-ci. Veuillez réessayer dans ${daysLeft} jour(s).`,
-    //     );
-    //   }
-    // }
     // Générer un OTP aléatoire à 6 chiffres
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
       throw new BadRequestException('Configuration de l\'email manquante');
@@ -333,7 +293,7 @@ export class UsersService {
       data: {
         otp,
         otpExpires,
-        lastPasswordResetAt: user.role !== 'admin' ? new Date() : user.lastPasswordResetAt, // mise à jour uniquement si non admin
+        lastPasswordResetAt: user.role !== 'admin' ? new Date() : user.lastPasswordResetAt, 
       },
     });
 
@@ -423,9 +383,8 @@ export class UsersService {
     };
   }
 
-  /**
-   * Réinitialise le mot de passe avec l'OTP
-   */
+  // Réinitialise le mot de passe avec l'OTP
+  
   async resetPasswordWithOtp(dto: VerifyOtpDto) {
     // Nettoyer les données d'entrée
     const email = dto.email.trim().toLowerCase();
@@ -470,68 +429,62 @@ export class UsersService {
         where: { email: dto.email },
         data: {
           password: hashedPassword,
-          otp: null, // Supprimer l'OTP utilisé
-          otpExpires: null, // Supprimer la date d'expiration
-          updatedAt: new Date() // Mettre à jour la date de modification
+          otp: null, 
+          otpExpires: null, 
+          updatedAt: new Date() 
         },
       });
-      // console.log('Mot de passe réinitialisé avec succès pour:', email);
-
-
       return {
         message: 'Mot de passe réinitialisé avec succès'
       };
 
     } catch (error) {
-      // console.error('Erreur lors de la réinitialisation:', error);
       throw new BadRequestException('Erreur lors de la réinitialisation du mot de passe');
     }
   }
 
-  /**
-   * Nettoie les OTP expirés (à appeler périodiquement)
-   */
-  async cleanupExpiredOtps() {
-    const result = await this.prisma.user.updateMany({
-      where: {
-        otpExpires: { lt: new Date() }
-      },
-      data: {
-        otp: null,
-        otpExpires: null
-      }
-    });
+  //  Nettoie les OTP expirés (à appeler périodiquement)
+   
+  // async cleanupExpiredOtps() {
+  //   const result = await this.prisma.user.updateMany({
+  //     where: {
+  //       otpExpires: { lt: new Date() }
+  //     },
+  //     data: {
+  //       otp: null,
+  //       otpExpires: null
+  //     }
+  //   });
 
-    // console.log(`${result.count} OTP expirés nettoyés`);
-    return result;
-  }
+  //   // console.log(`${result.count} OTP expirés nettoyés`);
+  //   return result;
+  // }
 
-  /**
-   * Vérifie si un utilisateur a un OTP valide (utile pour debug)
-   */
-  async checkOtpStatus(email: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      select: {
-        email: true,
-        otp: true,
-        otpExpires: true
-      }
-    });
+  //  Vérifie si un utilisateur a un OTP valide (utile pour debug)
+  
+  // async checkOtpStatus(email: string) {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { email },
+  //     select: {
+  //       email: true,
+  //       otp: true,
+  //       otpExpires: true
+  //     }
+  //   });
 
-    if (!user) {
-      throw new NotFoundException('Utilisateur introuvable');
-    }
+  //   if (!user) {
+  //     throw new NotFoundException('Utilisateur introuvable');
+  //   }
 
-    const hasValidOtp = user.otp && user.otpExpires && user.otpExpires > new Date();
+  //   const hasValidOtp = user.otp && user.otpExpires && user.otpExpires > new Date();
 
-    return {
-      email: user.email,
-      hasOtp: !!user.otp,
-      otpExpires: user.otpExpires,
-      isValid: hasValidOtp
-    };
-  }
+  //   return {
+  //     email: user.email,
+  //     hasOtp: !!user.otp,
+  //     otpExpires: user.otpExpires,
+  //     isValid: hasValidOtp
+  //   };
+  // }
 
 }
 

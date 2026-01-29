@@ -11,6 +11,7 @@ import {
   Req,
   UseInterceptors,
   Query,
+  Patch,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
@@ -53,14 +54,28 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  // Récuperer par Id
+  @Get('/:id')
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Récupérer un utilisateur par ID' })
+  async findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
   // Mettre à jour son propre profil
-  @Put('profile/me')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mettre à jour son propre profil' })
-  async updateProfile(@Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
+  async updateProfile(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto,
+   @Req() req: Request) {
     const user = req.user as any;
-    return this.usersService.update(user.sub, updateUserDto);
+    return this.usersService.update(
+      id,
+      updateUserDto
+    );
   }
 
   // Supprimer un utilisateur - ADMIN SEULEMENT

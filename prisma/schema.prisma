@@ -47,7 +47,7 @@ model product {
   imageUrl        String?
   userId          String
   categoryId      String
- stockInitial  Int      
+  stockInitial  Int      
   stockFinal    Int      
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt

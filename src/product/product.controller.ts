@@ -18,24 +18,49 @@ import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
 export class ProductController {
   constructor(private readonly productService: ProductService) { }
 
-  @ApiOperation({ summary: "Uploader une image et l'associer à un produit" })
+  @ApiOperation({ summary: 'Créer un nouveau produit avec image optionnelle' })
   @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'productId', description: 'ID du produit' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
+        name: {
+          type: 'string',
+          description: 'Nom du produit',
+        },
+        description: {
+          type: 'string',
+          description: 'Description du produit',
+        },
+        price: {
+          type: 'number',
+          description: 'Prix du produit',
+        },
+        categoryId: {
+          type: 'string',
+          description: 'ID de la catégorie',
+        },
+        stockInitial: {
+          type: 'number',
+          description: 'Stock initial',
+        },
+        userId: {
+          type: 'string',
+          description: 'ID de l\'utilisateur',
+        },
         file: {
           type: 'string',
           format: 'binary',
-          description: 'Image du produit (jpg, jpeg, png, gif)',
+          description: 'Image du produit (optionnel)',
         },
       },
     },
   })
-  @ApiResponse({ status: 200, description: 'Image uploadée avec succès' })
-  @ApiResponse({ status: 400, description: 'Fichier invalide ou manquant' })
-  @Post(':productId/upload-image')
+  @ApiResponse({ status: 201, description: 'Produit créé avec succès' })
+  @ApiResponse({ status: 401, description: 'Non autorisé' })
+  @Post()
+  @Roles(Role.admin)
+  @ApiBearerAuth()
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -57,35 +82,71 @@ export class ProductController {
       },
     }),
   )
-  async uploadProductImage(
-    @Param('productId') productId: string,
-    @UploadedFile() file: Express.Multer.File
-  ) {
-    if (!file) {
-      throw new BadRequestException('Fichier non fourni');
+  async create(@Body() createProductDto: CreateProductDto, @UploadedFile() file?: Express.Multer.File) {
+    let imageUrl: string | undefined;
+    if (file) {
+      imageUrl = `/uploads/products/${file.filename}`;
     }
-
-    const imageUrl = `/uploads/products/${file.filename}`;
-
-    await this.productService.updateProductImage(productId, imageUrl);
-
-    return {
-      url: imageUrl,
-      filename: file.filename,
-      productId: productId
-    };
+    return this.productService.create(createProductDto, imageUrl);
   }
 
-  @ApiOperation({ summary: 'Créer un nouveau produit' })
-  @ApiBody({ type: CreateProductDto })
-  @ApiResponse({ status: 201, description: 'Produit créé avec succès' })
-  @ApiResponse({ status: 401, description: 'Non autorisé' })
-  @Post()
-  @Roles(Role.admin)
-  @ApiBearerAuth()
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productService.create(createProductDto);
-  }
+  // @ApiOperation({ summary: "Uploader une image et l'associer à un produit existant" })
+  // @ApiConsumes('multipart/form-data')
+  // @ApiParam({ name: 'productId', description: 'ID du produit' })
+  // @ApiBody({
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       file: {
+  //         type: 'string',
+  //         format: 'binary',
+  //         description: 'Image du produit (jpg, jpeg, png, gif)',
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 200, description: 'Image uploadée avec succès' })
+  // @ApiResponse({ status: 400, description: 'Fichier invalide ou manquant' })
+  // @Post(':productId/upload-image')
+  // @UseInterceptors(
+  //   FileInterceptor('file', {
+  //     storage: diskStorage({
+  //       destination: './uploads/products',
+  //       filename: (req, file, callback) => {
+  //         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+  //         const ext = extname(file.originalname);
+  //         callback(null, `product-${uniqueSuffix}${ext}`);
+  //       },
+  //     }),
+  //     fileFilter: (req, file, callback) => {
+  //       if (!file.mimetype.match(/^image\/(jpg|jpeg|png|gif)$/)) {
+  //         return callback(new BadRequestException('Seules les images sont autorisées!'), false);
+  //       }
+  //       callback(null, true);
+  //     },
+  //     limits: {
+  //       fileSize: 1024 * 1024 * 5,
+  //     },
+  //   }),
+  // )
+  // async uploadProductImage(
+  //   @Param('productId') productId: string,
+  //   @UploadedFile() file: Express.Multer.File
+  // ) {
+  //   if (!file) {
+  //     throw new BadRequestException('Fichier non fourni');
+  //   }
+
+  //   const imageUrl = `/uploads/products/${file.filename}`;
+
+  //   await this.productService.updateProductImage(productId, imageUrl);
+
+  //   return {
+  //     url: imageUrl,
+  //     filename: file.filename,
+  //     productId: productId
+  //   };
+  // }
 
   @ApiOperation({ summary: 'Récupérer tous les produits' })
   @ApiResponse({ status: 200, description: 'Produits récupérés avec succès' })

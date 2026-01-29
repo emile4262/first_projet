@@ -1,13 +1,23 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
-import { IsEnum, IsOptional } from 'class-validator';
-import { Role } from '@prisma/client';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
-  [x: string]: any;
 
+  @ApiProperty({ description: 'Prénom de l\'utilisateur' })
+    @IsString()
+    @IsNotEmpty()
+    firstName: string;
   
-  @IsOptional()
-  @IsEnum(Role)
-  role?: Role;
+    @ApiProperty({ description: 'Nom de l\'utilisateur' })
+    @IsString()
+    @IsNotEmpty()
+    lastName: string;
+  
+    @ApiProperty({ description: 'Adresse e-mail de l\'utilisateur' })
+    @IsEmail()
+    @IsNotEmpty()
+    email: string;
+ 
 }

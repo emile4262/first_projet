@@ -16,7 +16,7 @@ export class OrderService {
 
   // Créer une commande
   async create(data: CreateOrderDto): Promise<Order> {
-    return await this.prisma.$transaction(async (tx) => {
+    return await this.prisma.$transaction(async (tx: any) => {
       // 1. Récupérer le produit avec verrouillage (si possible, sinon simple lecture)
       // Note: Prisma ne supporte pas nativement le "SELECT FOR UPDATE" facilement sans raw query,
       // mais on peut vérifier le stock dans la transaction.
@@ -47,14 +47,15 @@ export class OrderService {
       });
 
       // 3. Créer la commande
-      const total = product.price * data.quantity;
+      const priceAsNumber = parseFloat(product.price);
+      const total = priceAsNumber * data.quantity;
 
       return tx.order.create({
         data: {
           productId: data.productId,
           userId: data.userId,
           quantity: data.quantity,
-          price: product.price,
+          price: priceAsNumber,
           total: total,
           status: OrderStatus.PENDING,
         },
@@ -90,7 +91,7 @@ export class OrderService {
   }
 
   // Mettre à jour le statut d'une commande
-  async updateOrderStatus(
+  async  updateOrderStatus(
     id: string,
     status: OrderStatus,
     dto: UpdateOrderStatusDto,
@@ -123,7 +124,7 @@ export class OrderService {
         },
       });
     } else if (status === OrderStatus.REJECTED) {
-      return this.prisma.$transaction(async (tx) => {
+      return this.prisma.$transaction(async (tx: any) => {
         const orderWithProduct = await tx.order.findUnique({
           where: { id },
           select: {

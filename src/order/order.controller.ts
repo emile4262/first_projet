@@ -3,8 +3,9 @@ import { OrderService } from './order.service';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderStatusDto } from './dto/update-order.dto';
+import { UpdateOrderStatusDto, RejectOrderDto } from './dto/update-order.dto';
 import { Role, Roles } from 'src/auth/role.decorateur';
+import { OrderStatus } from './order.service';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Order } from '@prisma/client';
 
@@ -40,6 +41,23 @@ export class OrderController {
   @Roles(Role.admin)
   async remove(@Param('id') id: string) {
     return this.orderService.remove(id);
+  }
+
+  @ApiOperation({ summary: "Approuver une commande" })
+  @Post(':id/approve')
+  @Roles(Role.admin)
+  @ApiParam({ name: 'id', description: 'ID de la commande' })
+  async approve(@Param('id') id: string): Promise<Order> {
+    return this.orderService.updateOrderStatus(id, OrderStatus.APPROVED, {} as UpdateOrderStatusDto);
+  }
+
+  @ApiOperation({ summary: 'Rejeter une commande' })
+  @Post(':id/reject')
+  @Roles(Role.admin)
+  @ApiParam({ name: 'id', description: 'ID de la commande' })
+  @ApiBody({ type: RejectOrderDto })
+  async reject(@Param('id') id: string, @Body() dto: RejectOrderDto): Promise<Order> {
+    return this.orderService.updateOrderStatus(id, OrderStatus.REJECTED, { reason: dto.reason } as UpdateOrderStatusDto);
   }
 
   @ApiOperation({ summary: 'Mettre à jour le statut d\'une commande' })

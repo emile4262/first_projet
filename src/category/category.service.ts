@@ -67,10 +67,11 @@ export class CategoryService {
     });
   }
 
-  // ✅ supprimer une categorie
+  // supprimer une categorie
   async remove(id: string) {
-    return this.prisma.category.delete({
-      where: { id: id.toString() },
+    await this.prisma.category.delete({
+      where: { id: id },
     });
+    return { message: `Catégorie avec l'ID ${id} supprimée avec succès` };
   }
 }
