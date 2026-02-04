@@ -7,6 +7,7 @@ import {
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto, ResetPasswordDto, VerifyOtpDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { SearchDto } from './dto/search.dto';
 import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -75,20 +76,55 @@ export class UsersService {
     return user;
 
   }
-  // obténir tous les utilisateurs avec pagination
-  async findAll() {
-  return this.prisma.user.findMany({
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-}
+  // obtenir tous les utilisateurs avec pagination et filtres
+  async findAll(query: SearchDto) {
+    const { page = 1, limit = 10, search, dateCreationDebut, dateCreationFin } = query || {};
+    const take = Math.max(1, Number(limit || 10));
+    const skip = (Math.max(1, Number(page || 1)) - 1) * take;
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (dateCreationDebut || dateCreationFin) {
+      where.createdAt = {};
+      if (dateCreationDebut) where.createdAt.gte = new Date(dateCreationDebut);
+      if (dateCreationFin) where.createdAt.lte = new Date(dateCreationFin);
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / take),
+      },
+    };
+  }
 
 
   //  obténir un utilisateur pas sont id

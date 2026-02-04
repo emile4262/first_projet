@@ -17,6 +17,7 @@ import { Request } from 'express';
 import { UsersService } from './users.service';
 import { CreateUserDto, LoginUserDto, ResetPasswordDto, VerifyOtpDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { SearchDto } from './dto/search.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
@@ -50,8 +51,8 @@ export class UsersController {
   @Roles(Role.admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
-  async findAll() {
-    return this.usersService.findAll();
+  async findAll(@Query() query: SearchDto) {
+    return this.usersService.findAll(query);
   }
 
   // Récuperer par Id

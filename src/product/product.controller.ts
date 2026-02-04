@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterc
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { SearchDto } from 'src/users/dto/search.dto';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
@@ -10,6 +11,7 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiRespons
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Role, Roles } from 'src/auth/role.decorateur';
 import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
+import { SearchProductDto } from './dto/search.product.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('products')
@@ -155,8 +157,8 @@ export class ProductController {
   @ApiBearerAuth()
   @Get()
   @UseInterceptors(new ExcludeFieldsInterceptor(['stockInitial']))
-  findAll() {
-    return this.productService.findAll();
+  findAll(@Query() query: SearchProductDto) {
+    return this.productService.findAll(query);
   }
 
   // @ApiOperation({ summary: 'Récupérer tous les produits avec leurs catégories' })

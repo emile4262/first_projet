@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { SearchDto } from 'src/users/dto/search.dto';
 import { PrismaService } from 'src/prisma.service';
 import { product } from '@prisma/client';
+import { SearchProductDto } from './dto/search.product.dto';
 
 @Injectable()
 export class ProductService {
@@ -51,21 +53,55 @@ export class ProductService {
 
   }
 
-  // Tous les produits avec pagination
-  async findAll(): Promise<product[]> {
-    return this.prisma.product.findMany({
-      include: {
-        category: true,
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            role: true,
+  // Tous les produits avec pagination et filtres
+  async findAll(query: SearchProductDto) {
+    const { page = 1, limit = 10, search, dateCreationDebut, dateCreationFin } = query || {};
+    const take = Math.max(1, Number(limit || 10));
+    const skip = (Math.max(1, Number(page || 1)) - 1) * take;
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (dateCreationDebut || dateCreationFin) {
+      where.createdAt = {};
+      if (dateCreationDebut) where.createdAt.gte = new Date(dateCreationDebut);
+      if (dateCreationFin) where.createdAt.lte = new Date(dateCreationFin);
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          category: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
           },
-        }
+        },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / take),
       },
-    });
+    };
   }
 
   async findAllWithCategory() {
