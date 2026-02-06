@@ -4,11 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
 import { PrismaModule } from 'src/prisma.module';
-import { AuthModule } from 'src/auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 // import { Order, OrderItem } from './entities/order.entity';
 
 @Module({
-  imports: [PrismaModule,AuthModule,],
+  imports: [PrismaModule,ConfigModule,],
   providers: [OrderService],
   controllers: [OrderController],
 })

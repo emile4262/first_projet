@@ -15,13 +15,13 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
-import { CreateUserDto, LoginUserDto, ResetPasswordDto, VerifyOtpDto } from './dto/create-user.dto';
+import { CreateUserDto} from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SearchDto } from './dto/search.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
-import { Role, Roles } from 'src/auth/role.decorateur';
+import { RolesGuard } from 'src/config/roles.guard';
+import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
+import { Role, Roles } from 'src/config/role.decorateur';
 import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
 
 @ApiTags('users')
@@ -38,12 +38,12 @@ export class UsersController {
   }
 
   // Connexion - PUBLIC
-  @Post('login')
-  @ApiOperation({ summary: 'Connexion utilisateur' })
-  async login(@Body() loginDto: LoginUserDto) {
-    const { email, password } = loginDto;
-    return this.usersService.login(email, password);
-  }
+  // @Post('login')
+  // @ApiOperation({ summary: 'Connexion utilisateur' })
+  // async login(@Body() loginDto: LoginUserDto) {
+  //   const { email, password } = loginDto;
+  //   return this.usersService.login(email, password);
+  // }
 
   // Récupérer tous les utilisateurs - ADMIN SEULEMENT
   @Get()
@@ -91,15 +91,15 @@ export class UsersController {
   }
 
   // Endpoints publics (sans authentification)
-  @Post('forgot-password')
-  @ApiOperation({ summary: 'Demander un OTP pour réinitialiser le mot de passe (public)' })
-  async forgotPassword(@Body() dto: ResetPasswordDto) {
-    return this.usersService.sendOtp(dto);
-  }
+  // @Post('forgot-password')
+  // @ApiOperation({ summary: 'Demander un OTP pour réinitialiser le mot de passe (public)' })
+  // async forgotPassword(@Body() dto: ResetPasswordDto) {
+  //   return this.usersService.sendOtp(dto);
+  // }
 
-  @Post('reset-password')
-  @ApiOperation({ summary: 'Réinitialiser le mot de passe avec OTP (public)' })
-  async resetPassword(@Body() dto: VerifyOtpDto) {
-    return this.usersService.resetPasswordWithOtp(dto);
-  }
+//   @Post('reset-password')
+//   @ApiOperation({ summary: 'Réinitialiser le mot de passe avec OTP (public)' })
+//   async resetPassword(@Body() dto: VerifyOtpDto) {
+//     return this.usersService.resetPasswordWithOtp(dto);
+//   }
 }

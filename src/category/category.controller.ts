@@ -3,12 +3,12 @@ import { AuthGuard} from '@nestjs/passport';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Public } from 'src/auth/public.decorateur';
-import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
+import { Public } from 'src/config/public.decorateur';
+import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from 'src/auth/role.decorateur';
-import { Role } from 'src/auth/role.decorateur';
-import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/config/role.decorateur';
+import { Role } from 'src/config/role.decorateur';
+import { RolesGuard } from 'src/config/roles.guard';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('category')

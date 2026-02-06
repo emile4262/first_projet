@@ -39,6 +39,17 @@ enum Role {
   admin 
 }
 
+// model auth{
+//   email     String    @unique
+//   password  String
+//   refreshToken String? 
+//   otp               String?    
+//   otpExpires        DateTime?  
+//   lastPasswordResetAt     DateTime? 
+//   createdAt DateTime  @default(now())
+//   updatedAt DateTime  @updatedAt
+// }
+
 model product {
   id              String         @id @default(uuid())
   name            String

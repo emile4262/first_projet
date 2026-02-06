@@ -1,12 +1,12 @@
 import { Controller, Post, Get, Param, Body, Delete, UseGuards, Patch, Query, BadRequestException } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, RejectOrderDto } from './dto/update-order.dto';
-import { Role, Roles } from 'src/auth/role.decorateur';
+import { Role, Roles } from 'src/config/role.decorateur';
 import { OrderStatus } from './order.service';
-import { RolesGuard } from 'src/auth/roles.guard';
+import { RolesGuard } from 'src/config/roles.guard';
 import { Order } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard, RolesGuard)

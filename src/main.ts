@@ -6,8 +6,7 @@ import { AppModule } from './app.module';
 import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express/interfaces';
-import { RolesGuard } from './auth/roles.guard';
-import { Logger } from '@nestjs/common';
+import { RolesGuard } from './config/roles.guard';
 
 async function bootstrap() {
   // const logger = new Logger('HTTP');

@@ -6,10 +6,10 @@ import { SearchDto } from 'src/users/dto/search.dto';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
-import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { RolesGuard } from 'src/auth/roles.guard';
-import { Role, Roles } from 'src/auth/role.decorateur';
+import { RolesGuard } from 'src/config/roles.guard';
+import { Role, Roles } from 'src/config/role.decorateur';
 import { ExcludeFieldsInterceptor } from 'src/composant/composant.interceptor';
 import { SearchProductDto } from './dto/search.product.dto';
 
