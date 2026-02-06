@@ -20,25 +20,25 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user; 
 
-    console.log('Requête utilisateur:', user);
-    console.log('Rôles requis:', requiredRoles);
+    // console.log('Requête utilisateur:', user);
+    // console.log('Rôles requis:', requiredRoles);
 
     if (!user) {
-      console.log('Accès refusé: utilisateur non authentifié');
+      // console.log('Accès refusé: utilisateur non authentifié');
       throw new ForbiddenException('Accès interdit : utilisateur non authentifié');
     }
 
     const userRole = user.role;
-    console.log(`Rôle de l'utilisateur: ${userRole}`);
+    // console.log(`Rôle de l'utilisateur: ${userRole}`);
 
     const hasRole = requiredRoles.some(role => role === userRole);
 
     if (!hasRole) {
-      console.log(`Accès refusé: rôle requis non trouvé (a: ${userRole}, requis: ${requiredRoles.join(', ')})`);
+      // console.log(`Accès refusé: rôle requis non trouvé (a: ${userRole}, requis: ${requiredRoles.join(', ')})`);
       throw new ForbiddenException('Accès interdit : rôle insuffisant');
     }
 
-    console.log('Accès autorisé');
+    // console.log('Accès autorisé');
     return true;
   }
 }

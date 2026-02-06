@@ -172,9 +172,26 @@ export class CartService {
         if (!cart) {
           throw new NotFoundException(`Panier avec identifiant ${cartId} non trouvé`);
         }
-        return this.prisma.product.findUnique({
-      where: { id: productId },
-     });
+        
+        // Vérifier que le produit existe
+        const product = await this.prisma.product.findUnique({
+          where: { id: productId },
+        });
+        
+        if (!product) {
+          throw new NotFoundException(`Produit avec identifiant ${productId} non trouvé`);
+        }
+
+        // Connecter le produit au panier
+        return this.prisma.cart.update({
+          where: { id: cartId },
+          data: {
+            products: {
+              connect: { id: productId },
+            },
+          },
+          include: { products: true },
+        });
       }
       // Vérifier si le produit existe
       async checkProductExists(productId: string) {

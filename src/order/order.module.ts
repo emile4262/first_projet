@@ -5,10 +5,11 @@ import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
 import { PrismaModule } from 'src/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { CartModule } from 'src/cart/cart.module';
 // import { Order, OrderItem } from './entities/order.entity';
 
 @Module({
-  imports: [PrismaModule,ConfigModule,],
+  imports: [PrismaModule, ConfigModule, CartModule],
   providers: [OrderService],
   controllers: [OrderController],
 })

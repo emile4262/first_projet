@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order } from '@prisma/client';
 import { UpdateOrderStatusDto } from './dto/update-order.dto';
+import { CartService } from 'src/cart/cart.service';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
@@ -12,7 +13,10 @@ export enum OrderStatus {
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cartService: CartService,
+  ) { }
 
   // Créer une commande
   async create(data: CreateOrderDto): Promise<Order> {
@@ -60,6 +64,25 @@ export class OrderService {
           status: OrderStatus.PENDING,
         },
       });
+    }).then(async (order) => {
+      // 4. Après la création de la commande, ajouter le produit au panier
+      try {
+        const activeCart = await this.prisma.cart.findFirst({
+          where: {
+            userId: data.userId,
+            status: 'ACTIVE',
+          },
+        });
+
+        if (activeCart) {
+          await this.cartService.addProductToCart(activeCart.id, data.productId);
+        }
+      } catch (error) {
+        // Si l'ajout au panier échoue, on ignore l'erreur car la commande a déjà été créée
+        console.error('Erreur lors de l\'ajout du produit au panier:', error);
+      }
+
+      return order;
     });
   }
 
