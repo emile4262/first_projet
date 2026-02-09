@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Param, Body, Delete, UseGuards, Patch, Query, BadRequestException } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, RejectOrderDto } from './dto/update-order.dto';
@@ -8,6 +8,7 @@ import { Role, Roles } from 'src/config/role.decorateur';
 import { OrderStatus } from './order.service';
 import { RolesGuard } from 'src/config/roles.guard';
 import { Order } from '@prisma/client';
+import { SearchOrderDto } from './dto/search.order.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('order')
@@ -23,10 +24,12 @@ export class OrderController {
   }
 
   @ApiOperation({ summary: 'Obtenir tous les orders' })
+  @ApiResponse({ status: 200, description: 'commandes récupérés avec succès' })
+  @ApiResponse({ status: 401, description: 'Non autorisé' })
   @Get()
   @Roles(Role.admin)
-  findAll() {
-    return this.orderService.getAllOrders();
+  findAll(@Query() query: SearchOrderDto) {
+    return this.orderService.findAllOrders(query);
   }
 
   @ApiOperation({ summary: 'Obtenir un order par ID' })

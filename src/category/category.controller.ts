@@ -1,14 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { AuthGuard} from '@nestjs/passport';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Public } from 'src/config/public.decorateur';
 import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/config/role.decorateur';
 import { Role } from 'src/config/role.decorateur';
 import { RolesGuard } from 'src/config/roles.guard';
+import { SearchDto } from 'src/users/dto/search.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('category')
@@ -24,11 +25,13 @@ export class CategoryController {
     return this.categoryService.create(createCategoryDto);
   }
 
+  @ApiOperation({summary: 'Récupérer tous les catégories'})
+  @ApiResponse({ status: 200, description: 'Catégories récupérés avec succès' })
   @Get()
   @Roles(Role.admin)
   @ApiBearerAuth()
-  getAll() {
-    return this.categoryService.findAll();
+  findAll(@Query() query: SearchDto) {
+    return this.categoryService.findAll(query);
   }
 
   @Get(':id')

@@ -1,42 +1,84 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { PrismaService } from 'src/prisma.service';
 import { Category } from './entities/category.entity';
+import { SearchDto } from 'src/users/dto/search.dto';
 
 @Injectable()
 export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ✅ creer une categorie
-  async create(CreateCategoryDto: CreateCategoryDto): Promise<Category> {
-    const { name } = CreateCategoryDto;
+  // creer une categorie
+  async create(data: CreateCategoryDto): Promise<Category> {
+    const { name, userId } = data;
 
     // Vérifier si la catégorie existe déjà
-
     const existingCategory = await this.prisma.category.findFirst({
       where: { name },
     });
 
-    if (existingCategory) {
-      throw new NotFoundException('Cette catégorie existe déjà');
+    if (!userId) {
+      throw new BadRequestException("L'ID utilisateur est requis");
     }
-    return this.prisma.category.create({
+
+    if (existingCategory) {
+      throw new BadRequestException('Cette catégorie existe déjà');
+    }
+
+    const category = await this.prisma.category.create({
       data: {
-        name: CreateCategoryDto.name
+        name,
+        userId,
       },
     });
 
-    // return this.prisma.category.create({
-    //   data: CreateCategoryDto,
-    // });
+    return category;
   }
 
   // obtention de toutes les categories
-  async findAll() {
-    return this.prisma.category.findMany({
-      include: { product: true },
-    });
+  async findAll(query: SearchDto) {
+    const { page = 1, limit = 10, search, dateCreationDebut, dateCreationFin } = query || {};
+    const take = Math.max(1, Number(limit || 10));
+    const skip = (Math.max(1, Number(page || 1)) - 1) * take;
+
+    const where: any = {};
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+    if (dateCreationDebut || dateCreationFin) {
+      where.createdAt = {};
+      if (dateCreationDebut) where.createdAt.gte = new Date(dateCreationDebut);
+      if (dateCreationFin) where.createdAt.lte = new Date(dateCreationFin);
+    }
+    const [data, total] = await Promise.all([
+      this.prisma.category.findMany({
+        where,
+        skip,
+        take,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
+        },
+      }),
+      this.prisma.category.count({ where }),
+    ]);
+    return {
+      data, 
+      meta: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / take),
+      }
+    }
+    
   }
   // async findAllWithProducts(): Promise<any[]> {
   //   return this.prisma.category.findMany({

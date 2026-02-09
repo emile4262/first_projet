@@ -31,7 +31,8 @@ model User {
   products  product[]
   orders    Order[]
   reviews    Review[]
-   carts     Cart[]
+  carts     Cart[]
+  categories category[]
 }
 
 enum Role {
@@ -72,9 +73,13 @@ model product {
 }
 
 model category {
-  id      String    @id @default(cuid())
-  name    String
-  product product[]
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  product   product[]
+  userId String
+  user      User?     @relation(fields: [userId], references: [id])
 }
 
 enum OrderStatus {

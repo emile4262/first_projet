@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateCartDto, UpdateCartDto } from './dto/create-cart.dto';
+import { SearchCartDto } from './dto/search.cart.dto';
 
 @Injectable()
 export class CartService {
@@ -43,13 +44,53 @@ export class CartService {
 
 //  recupère tous les paniers
 
-  async findAll() {
-    return this.prisma.cart.findMany({
-      include: {
-        products: true,
-        user: true,
+  async findAll(query: SearchCartDto) {
+    const { page = 1, limit = 10, search, dateCreationDebut, dateCreationFin } = query || {};
+    const take = Math.max(1, Number(limit || 10));
+    const skip = (Math.max(1, Number(page || 1)) - 1) * take;
+
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (dateCreationDebut || dateCreationFin) {
+      where.createdAt = {};
+      if (dateCreationDebut) where.createdAt.gte = new Date(dateCreationDebut);
+      if (dateCreationFin) where.createdAt.lte = new Date(dateCreationFin);
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.cart.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+            },
+          },
+        },
+      }),
+      this.prisma.cart.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / take),
       },
-    });
+    };
   } 
 
 //  recupère un panier par son identifiant

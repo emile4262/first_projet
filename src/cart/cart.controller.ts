@@ -11,15 +11,17 @@ import {
   HttpStatus,
   UseGuards,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddProductDto, CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/config/roles.guard';
 import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
 import { Role, Roles } from 'src/config/role.decorateur';
 import { StringifyOptions } from 'querystring';
+import { SearchCartDto } from './dto/search.cart.dto';
 
 @ApiTags('carts')
 @ApiBearerAuth()
@@ -40,11 +42,13 @@ export class CartController {
 //  recupère tous les paniers
   @Get()
   @ApiOperation({ summary: 'Récupérer tous les paniers' })
+  @ApiResponse({ status: 200, description: 'panier récupérés avec succès' })
+  @ApiResponse({ status: 401, description: 'Non autorisé' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin)
   @HttpCode(HttpStatus.OK)
-  findAll() {
-    return this.cartService.findAll();
+  findAll(@Query() query: SearchCartDto ) {
+    return this.cartService.findAll(query);
   }
 
    
