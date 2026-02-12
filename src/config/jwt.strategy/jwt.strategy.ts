@@ -4,6 +4,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { Admin } from 'typeorm';
+import { User } from 'generated/prisma';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -21,7 +22,9 @@ constructor(
    });
 }
  // Dans JwtStrategy, méthode validate
-async validate(payload: any) {
+async validate(payload: { sub: string; email: string; role: string }): Promise<
+{ userId: string; email: string; role: string }
+> {
   if (!payload.role) {
     throw new UnauthorizedException('Information de rôle manquante');
   }

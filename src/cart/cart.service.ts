@@ -9,32 +9,36 @@ export class CartService {
   constructor(private readonly prisma: PrismaService) {}
 
 //   la création du panier 
-  async create(createCartDto: CreateCartDto) {
+  async create(createCartDto: CreateCartDto, userId?: string) {
 
 // verifie que l'utilisateur existe
     const user = await this.prisma.user.findUnique({
-       where: { id: createCartDto.userId },
+       where: { id: userId },
     })
 
+    if (!userId) {
+      throw new NotFoundException('L\'ID utilisateur est requis');
+    }
+
     if(!user) {
-      throw new NotFoundException(`Utilisateur avec identifiant ${createCartDto.userId} pas trouvé`);
+      throw new NotFoundException(`Utilisateur avec identifiant ${userId} pas trouvé`);
     }
 
     // Vérifie si un panier actif existe déjà pour l'utilisateur
    const existingActiveCart = await this.prisma.cart.findFirst({
     where: {
-      userId: createCartDto.userId,
+      userId: userId,
       status: 'ACTIVE',
     },
   });
 
   if(existingActiveCart){
-    throw new ConflictException(`Un panier actif existe déjà pour l'utilisateur ${createCartDto.userId}`);
+    throw new ConflictException(`Un panier actif existe déjà pour l'utilisateur ${userId}`);
   }
 
     return this.prisma.cart.create({
       data: {
-        ...createCartDto,
+        userId: userId,
         status: 'ACTIVE',
         total: 0,
       },

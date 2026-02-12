@@ -12,7 +12,10 @@ export class AuthService {
    constructor(
       private readonly prisma: PrismaService,
       private readonly jwtService: JwtService
-    ) { }
+    ) {
+      // Vérifier que le JwtService est bien configuré
+      console.log('AuthService initialized - JWT_SECRET available:', !!process.env.JWT_SECRET);
+    }
 
   // connexion d'un utilisateur
   async login(email: string, password: string): Promise<{
@@ -23,6 +26,9 @@ export class AuthService {
     user?: any;
      }> {
       try {
+      // Vérifier que le JWT secret est disponible
+      console.log('JWT_SECRET from process.env:', process.env.JWT_SECRET);
+      
       const user = await this.prisma.user.findUnique({ where: { email } });
 
       if (!user) {
@@ -51,7 +57,7 @@ export class AuthService {
       const refresh_token = this.jwtService.sign(
         { sub: user.id },
         {
-          secret: process.env.JWT_REFRESH_SECRET,
+          secret: process.env.JWT_SECRET,
           expiresIn: '2d',
         }
       );

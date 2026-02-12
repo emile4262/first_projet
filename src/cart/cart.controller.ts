@@ -12,6 +12,7 @@ import {
   UseGuards,
   ValidationPipe,
   Query,
+  Request,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddProductDto, CreateCartDto } from './dto/create-cart.dto';
@@ -35,8 +36,9 @@ export class CartController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.admin, Role.user)
   @HttpCode(HttpStatus.CREATED)
-  create(@Body(ValidationPipe) createCartDto: CreateCartDto) {
-    return this.cartService.create(createCartDto);
+  create(@Body(ValidationPipe) createCartDto: CreateCartDto, @Request() req?: any) {
+    const userId = req?.user?.userId;
+    return this.cartService.create(createCartDto, userId);
   }
 
 //  recupère tous les paniers

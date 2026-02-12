@@ -7,10 +7,10 @@ export class CreateOrderDto {
     @IsUUID()
     productId: string;
 
-    @ApiProperty({ description: 'ID de l\'utilisateur passant la commande' })
-    @IsNotEmpty()
-    @IsUUID()
-    userId: string;
+    // @ApiProperty({ description: 'ID de l\'utilisateur passant la commande' })
+    // @IsNotEmpty()
+    // @IsUUID()
+    // userId: string;
 
     @ApiProperty({ description: 'Quantité à commander', minimum: 1 })
     @IsNotEmpty()

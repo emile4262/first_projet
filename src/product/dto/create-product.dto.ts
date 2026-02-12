@@ -29,10 +29,10 @@ export class CreateProductDto {
     @Type(() => Number)
     stockInitial: number;
 
-    @ApiProperty()
-    @IsOptional()
-    @IsNotEmpty()
-    userId: string;
+    // @ApiProperty()
+    // @IsOptional()
+    // @IsNotEmpty()
+    // userId: string;
 
     // @ApiProperty()
     // @IsNotEmpty()

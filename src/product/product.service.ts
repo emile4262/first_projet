@@ -10,7 +10,7 @@ import { SearchProductDto } from './dto/search.product.dto';
 export class ProductService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async create(data: CreateProductDto, imageUrl?: string): Promise<product> {
+  async create(data: CreateProductDto, imageUrl?: string, userId?: string): Promise<product> {
     const category = await this.prisma.category.findUnique({
       where: { id: data.categoryId },
     });
@@ -28,7 +28,7 @@ export class ProductService {
       throw new BadRequestException('Le produit doit avoir un stock initial supérieur à 0');
     }
 
-    if (!data.userId) {
+    if (!userId) {
       throw new BadRequestException('L\'ID utilisateur est requis');
     }
 
@@ -44,7 +44,7 @@ export class ProductService {
           connect: { id: data.categoryId },
         },
         user: {
-          connect: { id: data.userId },
+          connect: { id: userId },
         },
       },
     });

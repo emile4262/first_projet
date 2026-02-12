@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, Delete, UseGuards, Patch, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, Delete, UseGuards, Patch, Query, BadRequestException, Request } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { ApiBearerAuth, ApiOperation, ApiTags, ApiParam, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/config/jwt-auth/jwt-auth.guard';
@@ -19,8 +19,9 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Créer un order' })
   @Post()
-  create(@Body() dto: CreateOrderDto) {
-    return this.orderService.create(dto);
+  create(@Body() dto: CreateOrderDto, @Request() req?: any) {
+    const userId = req?.user?.userId;
+    return this.orderService.create(dto, userId);
   }
 
   @ApiOperation({ summary: 'Obtenir tous les orders' })

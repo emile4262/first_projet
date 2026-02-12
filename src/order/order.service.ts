@@ -20,7 +20,7 @@ export class OrderService {
   ) { }
 
   // Créer une commande
-  async create(data: CreateOrderDto): Promise<Order> {
+  async create(data: CreateOrderDto, userId?: string): Promise<Order> {
     return await this.prisma.$transaction(async (tx: any) => {
       // 1. Récupérer le produit avec verrouillage (si possible, sinon simple lecture)
       // Note: Prisma ne supporte pas nativement le "SELECT FOR UPDATE" facilement sans raw query,
@@ -28,6 +28,10 @@ export class OrderService {
       const product = await tx.product.findUnique({
         where: { id: data.productId },
       });
+
+      if (!userId) {
+        throw new BadRequestException('L\'ID utilisateur est requis');
+      }
 
       if (!product) {
         throw new NotFoundException('Produit non trouvé');
@@ -58,7 +62,7 @@ export class OrderService {
       return tx.order.create({
         data: {
           productId: data.productId,
-          userId: data.userId,
+          userId: userId,
           quantity: data.quantity,
           price: priceAsNumber,
           total: total,
@@ -70,7 +74,7 @@ export class OrderService {
       try {
         const activeCart = await this.prisma.cart.findFirst({
           where: {
-            userId: data.userId,
+            userId: userId,
             status: 'ACTIVE',
           },
         });

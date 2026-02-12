@@ -11,16 +11,12 @@ export class CategoryService {
 
   // creer une categorie
   async create(data: CreateCategoryDto): Promise<Category> {
-    const { name, userId } = data;
+    const { name } = data;
 
     // Vérifier si la catégorie existe déjà
     const existingCategory = await this.prisma.category.findFirst({
       where: { name },
     });
-
-    if (!userId) {
-      throw new BadRequestException("L'ID utilisateur est requis");
-    }
 
     if (existingCategory) {
       throw new BadRequestException('Cette catégorie existe déjà');
@@ -29,7 +25,6 @@ export class CategoryService {
     const category = await this.prisma.category.create({
       data: {
         name,
-        userId,
       },
     });
 
@@ -56,16 +51,6 @@ export class CategoryService {
         where,
         skip,
         take,
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              role: true,
-            },
-          },
-        },
       }),
       this.prisma.category.count({ where }),
     ]);

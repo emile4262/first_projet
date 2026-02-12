@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Query, Request } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -46,10 +46,10 @@ export class ProductController {
           type: 'number',
           description: 'Stock initial',
         },
-        userId: {
-          type: 'string',
-          description: 'ID de l\'utilisateur',
-        },
+        // userId: {
+        //   type: 'string',
+        //   description: 'ID de l\'utilisateur',
+        // },
         file: {
           type: 'string',
           format: 'binary',
@@ -84,12 +84,13 @@ export class ProductController {
       },
     }),
   )
-  async create(@Body() createProductDto: CreateProductDto, @UploadedFile() file?: Express.Multer.File) {
+  async create(@Body() createProductDto: CreateProductDto, @UploadedFile() file?: Express.Multer.File, @Request() req?: any) {
     let imageUrl: string | undefined;
     if (file) {
       imageUrl = `/uploads/products/${file.filename}`;
     }
-    return this.productService.create(createProductDto, imageUrl);
+    const userId = req?.user?.userId;
+    return this.productService.create(createProductDto, imageUrl, userId);
   }
 
   // @ApiOperation({ summary: "Uploader une image et l'associer à un produit existant" })
