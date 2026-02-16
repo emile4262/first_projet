@@ -10,7 +10,7 @@ export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
   // creer une categorie
-  async create(data: CreateCategoryDto): Promise<Category> {
+  async create(data: CreateCategoryDto, userId?: string): Promise<Category> {
     const { name } = data;
 
     // Vérifier si la catégorie existe déjà
@@ -22,9 +22,14 @@ export class CategoryService {
       throw new BadRequestException('Cette catégorie existe déjà');
     }
 
+    if (!userId) {
+      throw new BadRequestException('L\'ID utilisateur est requis');
+    }
+
     const category = await this.prisma.category.create({
       data: {
         name,
+        userId: userId,
       },
     });
 

@@ -9,8 +9,7 @@ export class CreateCartDto {
   @ApiProperty()    
   @IsNotEmpty()
   @IsString()
-  userId: string;
-  productId: any;
+  productId: string;
 
   
  

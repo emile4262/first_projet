@@ -38,6 +38,7 @@ export class CartService {
 
     return this.prisma.cart.create({
       data: {
+       productId: createCartDto.productId,
         userId: userId,
         status: 'ACTIVE',
         total: 0,

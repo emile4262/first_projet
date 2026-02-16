@@ -6,8 +6,8 @@ export class CreateCategoryDto {
     @IsNotEmpty()
     name: string;
 
-    @ApiProperty()
-    @IsOptional()
-    @IsNotEmpty()
-    userId: string;
+    // @ApiProperty()
+    // @IsOptional()
+    // @IsNotEmpty()
+    // userId: string;
 }

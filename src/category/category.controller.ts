@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
 import { AuthGuard} from '@nestjs/passport';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -10,6 +10,9 @@ import { Roles } from 'src/config/role.decorateur';
 import { Role } from 'src/config/role.decorateur';
 import { RolesGuard } from 'src/config/roles.guard';
 import { SearchDto } from 'src/users/dto/search.dto';
+import { Request } from 'express';
+
+type RequestWithUser = Request & { user?: { userId?: string } };
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('category')
@@ -19,10 +22,14 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
+  @ApiOperation({summary: 'Créer une nouvelle catégorie'})
+  @ApiResponse({ status: 201, description: 'Catégorie créée avec succès' })
+  @ApiResponse({ status: 400, description: 'Requête invalide' })
   @Roles(Role.admin)
   @ApiBearerAuth()
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoryService.create(createCategoryDto);
+  create(@Body() createCategoryDto: CreateCategoryDto, @Req() req?: RequestWithUser) {
+   const userId = req?.user?.userId;
+    return this.categoryService.create(createCategoryDto, userId);
   }
 
   @ApiOperation({summary: 'Récupérer tous les catégories'})

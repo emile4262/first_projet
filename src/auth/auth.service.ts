@@ -14,7 +14,7 @@ export class AuthService {
       private readonly jwtService: JwtService
     ) {
       // Vérifier que le JwtService est bien configuré
-      console.log('AuthService initialized - JWT_SECRET available:', !!process.env.JWT_SECRET);
+      // console.log('AuthService initialized - JWT_SECRET available:', !!process.env.JWT_SECRET);
     }
 
   // connexion d'un utilisateur
@@ -27,7 +27,7 @@ export class AuthService {
      }> {
       try {
       // Vérifier que le JWT secret est disponible
-      console.log('JWT_SECRET from process.env:', process.env.JWT_SECRET);
+      // console.log('JWT_SECRET from process.env:', process.env.JWT_SECRET);
       
       const user = await this.prisma.user.findUnique({ where: { email } });
 
