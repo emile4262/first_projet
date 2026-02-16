@@ -1,35 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
-import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express/interfaces';
-import { RolesGuard } from './config/roles.guard';
+import { AppModule } from './app.module';
+import { join } from 'path';
 
 async function bootstrap() {
-  // const logger = new Logger('HTTP');
-  // const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/',
   });
-//  une alternative pour logger les requetes http
-  // app.use((req, res, next) => { 
-  //   const start = Date.now(); 
-  
-  //   res.on('finish', () => { 
-  //     logger.log(
-  //      `method: ${req.method},
-  //       url: ${req.originalUrl}, 
-  //       status: ${res.statusCode},
-  //       responseTime: ${Date.now() - start}ms`
-  //     ); 
-  //   }); 
-  
-  //   next(); 
-  // }); 
 
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
@@ -48,14 +27,7 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   const port = process.env.PORT ?? 5000;
   await app.listen(port);
+  console.log(`Application écoute sur le port ${port}`);
 }
-@Module({
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-   ],
-})
-export class RootModule {}
+
 bootstrap();
