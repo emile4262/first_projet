@@ -28,7 +28,7 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'commandes récupérés avec succès' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
   @Get()
-  @Roles(Role.admin)
+  @UseGuards(JwtAuthGuard)
   findAll(@Query() query: SearchOrderDto) {
     return this.orderService.findAllOrders(query);
   }
@@ -42,14 +42,12 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Supprimer un order par ID' })
   @Delete(':id')
-  @Roles(Role.admin)
   async remove(@Param('id') id: string) {
     return this.orderService.remove(id);
   }
 
   @ApiOperation({ summary: "Approuver une commande" })
   @Post(':id/approve')
-  @Roles(Role.admin)
   @ApiParam({ name: 'id', description: 'ID de la commande' })
   async approve(@Param('id') id: string): Promise<Order> {
     return this.orderService.updateOrderStatus(id, OrderStatus.APPROVED, {} as UpdateOrderStatusDto);
@@ -57,7 +55,6 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Rejeter une commande' })
   @Post(':id/reject')
-  @Roles(Role.admin)
   @ApiParam({ name: 'id', description: 'ID de la commande' })
   @ApiBody({ type: RejectOrderDto })
   async reject(@Param('id') id: string, @Body() dto: RejectOrderDto): Promise<Order> {
@@ -66,7 +63,6 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Mettre à jour le statut d\'une commande' })
   @Patch(':id/status')
-  @Roles(Role.admin)
   @ApiParam({ name: 'id', description: 'ID de la commande' })
   @ApiBody({ type: UpdateOrderStatusDto })
   async updateOrderStatus(

@@ -48,7 +48,6 @@ export class UsersController {
   // Récupérer tous les utilisateurs - ADMIN SEULEMENT
   @Get()
   @UseGuards(JwtAuthGuard)
-  @Roles(Role.admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer tous les utilisateurs' })
   async findAll(@Query() query: SearchDto) {
@@ -82,7 +81,6 @@ export class UsersController {
   // Supprimer un utilisateur - ADMIN SEULEMENT
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.admin)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer un utilisateur' })
   async remove(@Param('id') id: string) {
