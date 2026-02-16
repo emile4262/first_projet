@@ -201,3 +201,12 @@ enum DeliveryStatus {
   CANCELED
 }
 
+model Logging {
+  id        String    @id @default(uuid())
+  message   String
+  level     String
+  timestamp DateTime  @default(now())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+

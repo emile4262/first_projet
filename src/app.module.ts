@@ -21,6 +21,7 @@ import { OrderService } from './order/order.service';
 import { CartModule } from './cart/cart.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma.module';
+import { LoggingModule } from './logging/logging.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PrismaModule } from './prisma.module';
     }),
     CartModule,
     OrderModule,
+    LoggingModule,
     
   ],
   controllers: [AppController, UsersController, ProductController, OrderController,CategoryController],
