@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { JwtAuthGuard } from "src/config/jwt-auth/jwt-auth.guard";
 import { RolesGuard } from "src/config/roles.guard";
 import { LoggingService} from "./logging.service";
 import { SearchLogDto } from "./dto/search.log.dto";
 import { CreateLogDto } from "./dto/createLog.dto";
+
+
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiTags('logging')
@@ -17,8 +19,9 @@ export class LoggingController {
   @ApiOperation({ summary: 'Créer un log d\'information' })
   @ApiResponse({ status: 201, description: 'Log créé avec succès' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
-  async createLog(@Body() createLogDto: CreateLogDto) {
-    return this.loggingService.createLog(createLogDto);
+  async createLog(@Body() createLogDto: CreateLogDto, @Req() req?: any) {
+    const userId = req?.user?.userId;
+    return this.loggingService.createLog(createLogDto, userId);
   }
 
   @Get()
@@ -41,11 +44,8 @@ export class LoggingController {
   @ApiOperation({ summary: 'Lire un log d\'information' })
   @ApiResponse({ status: 200, description: 'Log lu avec succès' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
-  async readLog() {
-    return this.loggingService.createLog({
-      message: 'Lecture d\'un log d\'information',
-      level: 'info',
-    });
+  async readLog(@Query('id') id: string) {
+    return this.loggingService.readLog(id);
   }
 
    }

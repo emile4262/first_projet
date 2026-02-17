@@ -14,12 +14,19 @@ export class LoggingService {
 
 // methode pour créer un log d'information
 
-async createLog(createLogDto: CreateLogDto): Promise<Logging> {
+async createLog(createLogDto: CreateLogDto, userId: string): Promise<Logging> {
 try{
   const logger = await this.prisma.logging.create({
     data: {
       message: createLogDto.message,
-      level: createLogDto.level,  
+      level: createLogDto.level,
+      action: createLogDto.action,
+      method: createLogDto.method, 
+      entity: createLogDto.entity,  
+    // recupérer l'id de l'utilisateur qui a fait depuis la bd
+    user: {
+      connect: { id: userId },
+    },
     },
   });
   return logger;
@@ -54,6 +61,17 @@ try{
         skip,
         take,
         orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              role: true,
+            },
+          },
+        },
       }),
       this.prisma.logging.count({ where }),
     ]);
@@ -79,6 +97,17 @@ try{
           { level: { contains: search, mode: 'insensitive' } },
         ],
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
     });
   }
 
@@ -87,6 +116,17 @@ try{
   async readLog(id: string): Promise<any> {
     const log = await this.prisma.logging.findUnique({
       where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
     });
     if (!log) {
       throw new Error('Log non trouvé');

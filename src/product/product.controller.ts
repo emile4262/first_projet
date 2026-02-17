@@ -61,7 +61,6 @@ export class ProductController {
   @ApiResponse({ status: 201, description: 'Produit créé avec succès' })
   @ApiResponse({ status: 401, description: 'Non autorisé' })
   @Post()
-  @Roles(Role.admin)
   @ApiBearerAuth()
   @UseInterceptors(
     FileInterceptor('file', {
@@ -193,7 +192,6 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get(':id')
-  @Roles(Role.admin)
   findOne(@Param('id') id: string) {
     return this.productService.findOne(id);
   }
@@ -206,7 +204,6 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Delete(':id')
-  @Roles(Role.admin)
   remove(@Param('id') id: string) {
     return this.productService.remove(id);
   }

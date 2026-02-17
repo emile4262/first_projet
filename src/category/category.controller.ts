@@ -25,7 +25,6 @@ export class CategoryController {
   @ApiOperation({summary: 'Créer une nouvelle catégorie'})
   @ApiResponse({ status: 201, description: 'Catégorie créée avec succès' })
   @ApiResponse({ status: 400, description: 'Requête invalide' })
-  @Roles(Role.admin)
   @ApiBearerAuth()
   create(@Body() createCategoryDto: CreateCategoryDto, @Req() req?: RequestWithUser) {
    const userId = req?.user?.userId;
@@ -35,28 +34,24 @@ export class CategoryController {
   @ApiOperation({summary: 'Récupérer tous les catégories'})
   @ApiResponse({ status: 200, description: 'Catégories récupérés avec succès' })
   @Get()
-  @Roles(Role.admin)
   @ApiBearerAuth()
   findAll(@Query() query: SearchDto) {
     return this.categoryService.findAll(query);
   }
 
   @Get(':id')
-  @Roles(Role.admin)
   @ApiBearerAuth()
   findOne(@Param('id') id: string) {
     return this.categoryService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles(Role.admin)
   @ApiBearerAuth()
   update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoryService.update(id, updateCategoryDto);
   }
 
   @Delete(':id')
-  @Roles(Role.admin)
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
     return this.categoryService.remove(id);

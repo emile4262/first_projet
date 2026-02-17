@@ -35,7 +35,6 @@ export class OrderController {
 
   @ApiOperation({ summary: 'Obtenir un order par ID' })
   @Get(':id')
-  @Roles(Role.admin)
   async findOne(@Param('id') id: string) {
     return this.orderService.findOne(id);
   }

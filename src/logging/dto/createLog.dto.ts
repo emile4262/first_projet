@@ -12,5 +12,14 @@ export class CreateLogDto {
    @ApiProperty({ description: 'Niveau du log'})
     @IsNotEmpty()
     level: string;
+
+    @ApiProperty({ description: 'Action associée au log' })
+    action?: string;
+
+    @ApiProperty({ description: 'Méthode associée au log' })
+    method?: string;
+
+    @ApiProperty({ description: 'Entité associée au log' })
+    entity?: string;
   
 }

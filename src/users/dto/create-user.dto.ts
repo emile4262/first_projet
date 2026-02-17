@@ -32,11 +32,12 @@ export class CreateUserDto {
   // @IsEnum(['admin', 'admin'])
   // @IsOptional()
   // role?: string;
+    createdAt: Date;
+
 
   @ApiProperty()
   @IsString()
   @IsOptional()
-  createdAt: Date;
   admin: boolean;
   role: Role;
 }
